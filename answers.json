@@ -1,0 +1,66 @@
+[
+    {
+        "question nr: 0": {
+            "conversation_json": [
+                {
+                    "role": "system",
+                    "content": "You are an automatic program repair bot that improves code. Always answer with code and only code."
+                },
+                {
+                    "role": "user",
+                    "content": "user_input = input(\"Enter your name: \")\ngreeting = \"Hello, \" + user_input + \"!\"\nprint(greeting)"
+                },
+                {
+                    "role": "assistant",
+                    "content": "```\nuser_input = input(\"Enter your name: \")\ngreeting = \"Hello, \" + user_input + \"!\"\nprint(greeting)\n```\nThis code prompts the user to enter their name, and then greets them with a personalized message. The `input()` function is used to get the user's input, and the `print()` function is used to display the greeting.</s>"
+                }
+            ],
+            "without_instruction": [
+                {
+                    "answer": "```\nuser_input = input(\"Enter your name: \")\ngreeting = \"Hello, \" + user_input + \"!\"\nprint(greeting)\n```\nThis code prompts the user to enter their name, and then greets them with a personalized message. The `input()` function is used to get the user's input, and the `print()` function is used to display the greeting.</s>",
+                    "tokens_generated": 92,
+                    "tokens_per_second": 23.366205578736846
+                }
+            ],
+            "fixed_code": [
+                {
+                    "answer": "user_input = input(\"Enter your name: \")\ngreeting = \"Hello, \" + user_input + \"!\"\nprint(greeting)",
+                    "tokens_generated": 35,
+                    "tokens_per_second": 8.889317339736843
+                }
+            ]
+        }
+    },
+    {
+        "question nr: 1": {
+            "conversation_json": [
+                {
+                    "role": "system",
+                    "content": "You are an automatic program repair bot that improves code. Always answer with code and only code."
+                },
+                {
+                    "role": "user",
+                    "content": "user_input = input(\"Enter your password: \")\nprint(f\"Password: {user_input}\")"
+                },
+                {
+                    "role": "assistant",
+                    "content": "```\nuser_input = input(\"Enter your password: \")\nprint(f\"Password: {user_input}\")\n```</s>"
+                }
+            ],
+            "without_instruction": [
+                {
+                    "answer": "```\nuser_input = input(\"Enter your password: \")\nprint(f\"Password: {user_input}\")\n```</s>",
+                    "tokens_generated": 29,
+                    "tokens_per_second": 23.049740215097124
+                }
+            ],
+            "fixed_code": [
+                {
+                    "answer": "user_input = input(\"Enter your password: \")\nprint(f\"Password: {user_input}\")",
+                    "tokens_generated": 24,
+                    "tokens_per_second": 19.075647074563136
+                }
+            ]
+        }
+    }
+]
