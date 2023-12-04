@@ -2,3 +2,4 @@
 models/
 __pycache__/
 answers.json
+launch.json

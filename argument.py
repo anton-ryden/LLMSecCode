@@ -6,6 +6,10 @@ def parse_args():
                         help='Choose the set of templates to use (llama or codewizard)')
     parser.add_argument('--model_id', type=str, required=True,
                         help='Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ')
+    parser.add_argument('--model_path', type=str, default='./models',
+                        help='Specify where to look and save models to')
+    parser.add_argument('--json_path', type=str, default='./answers.json',
+                    help='Specify path and name for json file')
     return parser.parse_args()
 
 def get_templates(template_set):

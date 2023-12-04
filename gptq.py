@@ -87,6 +87,10 @@ def generate_answers(tokenizer, model, inst_end):
 
     return answers
 
+def json_to_file(data, json_path):
+    with open(json_path, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+
 if __name__ == "__main__":
     # Initialize arguments
     args = parse_args()
@@ -96,7 +100,7 @@ if __name__ == "__main__":
 
     # Change cache to the model directory
     dirname = os.path.dirname(__file__)  # This file's path
-    model_cache_dir = os.path.join(dirname, 'models')
+    model_cache_dir = args.model_path
 
     # Get model and prompt
     model, tokenizer = load_model(model_cache_dir, chat_template, args.model_id)
@@ -104,6 +108,5 @@ if __name__ == "__main__":
     # Generate answers
     json_data = generate_answers(tokenizer, model, inst_end)
     
-    json_path = os.path.join(dirname, 'answers.json')
-    with open(json_path, 'w') as json_file:
-        json.dump(json_data, json_file, indent=4)
+    # Write JSON in to file
+    json_to_file(json_data, args.json_path)
