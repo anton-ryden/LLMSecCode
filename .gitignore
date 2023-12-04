@@ -1,2 +1,4 @@
 # Ignore the models directory
 models/
+__pycache__/
+answers.json

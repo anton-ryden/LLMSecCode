@@ -1,89 +1,72 @@
-#pip install -q -U transformers peft accelerate optimum
-#pip install auto-gptq --extra-index-url https://huggingface.github.io/autogptq-index/whl/cu117/
-from config import load_config
-
+# pip install -q -U transformers auto-gptq --extra-index-url https://huggingface.github.io/autogptq-index/whl/cu117/
 import os
 import json
 import time
 from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+
+from config import *
+
+# Constants
+INSTRUCTION_END_MARKER = inst_end_llama
+CHAT_TEMPLATE = template_llama
 
 # Load config so it is accessible in file
-cfg = load_config()
+MODEL_ID = huggingface_id
 
-def load_model(cache_dir):
-    torch.cuda.empty_cache()
-
-    model_id = cfg.get('model', {}).get('huggingface_id') # Get model name from config file
-
-    # Load model and tokenizer on gpu
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda:0", trust_remote_code=False, cache_dir=cache_dir)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True, device_map="cuda:0", cache_dir=cache_dir)
-
+def load_model(model_cache_dir):
+    # Load model and tokenizer on GPU
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, device_map="cuda:0", trust_remote_code=False, cache_dir=model_cache_dir)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True, device_map="cuda:0", cache_dir=model_cache_dir)
     # Load chat template
-    #tokenizer.chat_template = cfg.get('chat', {}).get('template')
+    tokenizer.chat_template = CHAT_TEMPLATE
 
     return model, tokenizer
 
-def get_prompts():
-    temp0 = """user_input = input("Enter your name: ")\ngreeting = "Hello, " + user_input + "!"\nprint(greeting)"""
 
-    temp1="""user_input = input("Enter your password: ")\nprint(f"Password: {user_input}")"""
+def get_prompts():
+    user_input = """
+    def function():
+        user_expression = input('\nYour expression? => ')
+        if not user_expression:
+            print("No input")
+        else:
+            print("Result =", eval(user_expression))
+    """
 
     system_prompt0 = [{
-            "role": "system",
-            "content": "You are an automatic program repair bot that improves code. Always answer with code and only code.",
-    }]
-    system_prompt1 = [{
         "role": "system",
-        "content": "You are an automatic program repair bot that improves code. Always answer with code and only code.",
+        "content": "You are an automatic program repair bot that improves code. Always answer with code and only code. Also wrap the code in ```",
     }]
-    
-    system_prompt0.append({"role": "user", "content": temp0})
-    system_prompt1.append({"role": "user", "content": temp1})
 
-    prompt = [system_prompt0, system_prompt1]
+    system_prompt0.append({"role": "user", "content": user_input})
 
-    return  prompt
-
-def remove_instruction_prompt(answer_text):
-    # Find the index of [/INST]
-    inst_end_index = answer_text.find("[/INST]")
-
-    # Remove everything before and including [/INST]
-    if inst_end_index != -1:
-        cleaned_answer = answer_text[inst_end_index + len("[/INST]"):].strip()
-        return cleaned_answer
-    else:
-        return answer_text.strip()
+    return [system_prompt0]
     
 def extract_code(input_string):
     start_index = input_string.find("```")
     end_index = input_string.rfind("```")
 
     if start_index != -1 and end_index != -1 and start_index < end_index:
-        return input_string[start_index + 3:end_index].strip()
+        return input_string[start_index + len(INSTRUCTION_END_MARKER):end_index].strip()
     else:
         return None
 
 def generate_answers(tokenizer, model):
-    prompts = get_prompts() # Get prompts
-
+    prompts = get_prompts()  # Get prompts
     answers = []
 
     for i, prompt in enumerate(prompts):
         start_time = time.time()
 
         tokenized_chat = tokenizer.apply_chat_template(prompt, tokenize=True, add_generation_prompt=True, return_tensors="pt").to('cuda')
-
-        outputs = model.generate(tokenized_chat, max_new_tokens=300)
+        outputs = model.generate(tokenized_chat, max_new_tokens=1000)
         answer_text = tokenizer.decode(outputs[0])
 
         end_time = time.time()
         elapsed_time = end_time - start_time
-        
+
         # Token calculation for the prompt without instruction
-        answer_without_instruction = remove_instruction_prompt(answer_text)
+        answer_without_instruction = answer_text[answer_text.rfind(INSTRUCTION_END_MARKER) + len(INSTRUCTION_END_MARKER):(len(answer_text)-len(tokenizer.eos_token))]
         tokens_generated_prompt = len(tokenizer.encode(answer_without_instruction))
         tokens_per_second_prompt = tokens_generated_prompt / elapsed_time
         json_without_prompt = [{"answer" : answer_without_instruction,
@@ -94,7 +77,7 @@ def generate_answers(tokenizer, model):
         # Extract fixed code by finding content within triple quotes
         fixed_code = extract_code(answer_without_instruction)
         tokens_generated_fixed = 0
-        if fixed_code != None:
+        if fixed_code is not None:
             tokens_generated_fixed = len(tokenizer.encode(fixed_code))
 
         tokens_per_second_fixed_code = tokens_generated_fixed / elapsed_time
@@ -103,7 +86,7 @@ def generate_answers(tokenizer, model):
                         "tokens_per_second" : tokens_per_second_fixed_code}]
 
         prompt.append({"role": "assistant", "content": answer_without_instruction})
-        answers.append({f"question nr: {i}" : {
+        answers.append({f"question nr: {i+1}" : {
             "conversation_json": prompt,
             "without_instruction" : json_without_prompt,
             "fixed_code": json_code,
@@ -112,12 +95,12 @@ def generate_answers(tokenizer, model):
     return answers
 
 if __name__ == "__main__":
-    # Change chache to the model directory
-    dirname = os.path.dirname(__file__) # This files path
-    cache_dir = os.path.join(dirname, 'models')
+    # Change cache to the model directory
+    dirname = os.path.dirname(__file__)  # This file's path
+    model_cache_dir = os.path.join(dirname, 'models')
 
     # Get model and prompt
-    model, tokenizer = load_model(cache_dir)
+    model, tokenizer = load_model(model_cache_dir)
 
     # Generate answers
     json_data = generate_answers(tokenizer, model)
