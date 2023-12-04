@@ -1,6 +1,6 @@
 import argparse
 
-
+# Note codewizard does not work atm
 def parse_args():
     parser = argparse.ArgumentParser(description="Choose template set.")
     parser.add_argument(
