@@ -1,5 +1,6 @@
 import json
 import time
+import copy
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from argument import parse_args, get_chat_template
 from get_prompts import *
@@ -76,6 +77,8 @@ def format_response(elapsed_time, answer_text, patch_nr, prompt):
 
 
 def load_model(model_cache_dir, chat_template, model_id):
+    print("Model Loading starting\n")
+
     # Load model and tokenizer on GPU
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -88,6 +91,8 @@ def load_model(model_cache_dir, chat_template, model_id):
     )
     # Load chat template
     tokenizer.chat_template = chat_template
+
+    print("Model Loading complete\n")
 
     return model, tokenizer
 
@@ -114,13 +119,28 @@ def generate_answers(tokenizer, model, inst_end):
             elapsed_time = end_time - start_time
 
             formatted_response = format_response(
-                elapsed_time, llm_response, patch_nr, prompt
+                elapsed_time, llm_response, patch_nr, copy.copy(prompt)
             )
             patches.append(formatted_response)
+
+            # Print progress
+            print_progress_bar(bug_nr, len(prompts), patch_nr, args.patches_per_bug)
 
         answers.append({f"bug nr: {bug_nr + 1}": patches})
 
     return answers
+
+def print_progress_bar(bug_iteration, bug_total, patch_iteration, patch_total, prefix='Progress', suffix='Complete', length=50, fill='█'):
+    bug_percent = ("{0:.1f}").format(100 * (bug_iteration / float(bug_total)))
+    patch_percent = ("{0:.1f}").format(100 * (patch_iteration / float(patch_total)))
+
+    bug_filled_length = int(length * bug_iteration // bug_total)
+    patch_filled_length = int(length * patch_iteration // patch_total)
+
+    bug_bar = fill * bug_filled_length + '-' * (length - bug_filled_length)
+    patch_bar = fill * patch_filled_length + '-' * (length - patch_filled_length)
+
+    print(f'\r{prefix} |Bug {bug_bar}| {bug_percent}% |Patch {patch_bar}| {patch_percent}% {suffix}', end='', flush=True)
 
 
 if __name__ == "__main__":
