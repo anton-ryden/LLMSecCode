@@ -33,6 +33,12 @@ def parse_args():
         default=2,
         help="The number of patches to generate per bug",
     )
+    parser.add_argument(
+        "--max_new_tokens",
+        type=int,
+        default=500,
+        help="The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.\n Default is %(default)s.",
+    )
     return parser.parse_args()
 
 

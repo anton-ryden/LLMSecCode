@@ -96,7 +96,7 @@ def generate_answers(tokenizer, model, inst_end):
             tokenized_chat = tokenizer.apply_chat_template(
                 prompt, tokenize=True, add_generation_prompt=True, return_tensors="pt"
             ).to("cuda")
-            outputs = model.generate(tokenized_chat, max_new_tokens=1000)
+            outputs = model.generate(tokenized_chat, max_new_tokens=args.max_new_tokens)
             llm_response = tokenizer.decode(
                 outputs[0], clean_up_tokenization_spaces=False
             )
