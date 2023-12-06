@@ -12,7 +12,7 @@ def parse_args():
     parser.add_argument(
         "--model_id",
         type=str,
-        default="TheBloke/CodeLlama-34B-Instruct-GPTQ",
+        default="TheBloke/CodeLlama-7B-Instruct-GPTQ",
         help="Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ",
     )
     parser.add_argument(
@@ -26,6 +26,12 @@ def parse_args():
         type=str,
         default="./answers.json",
         help="Specify path and name for the JSON file",
+    )
+    parser.add_argument(
+        "--patches_per_bug",
+        type=int,
+        default=2,
+        help="The number of patches to generate per bug",
     )
     return parser.parse_args()
 
