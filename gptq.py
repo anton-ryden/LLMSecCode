@@ -16,7 +16,7 @@ def load_model(model_cache_dir, chat_template, model_id):
         model_id, use_fast=True, device_map="cuda:0", cache_dir=model_cache_dir
     )
     # Load chat template
-    #tokenizer.chat_template = chat_template
+    tokenizer.chat_template = chat_template
 
     return model, tokenizer
 

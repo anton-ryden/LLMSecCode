@@ -12,7 +12,7 @@ def parse_args():
     parser.add_argument(
         "--model_id",
         type=str,
-        required=True,
+        default="TheBloke/CodeLlama-34B-Instruct-GPTQ",
         help="Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ",
     )
     parser.add_argument(
