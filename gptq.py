@@ -2,8 +2,8 @@ import json
 import time
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from argument import parse_args, get_chat_template
-from get_prompts import get_prompts
-import test_code
+from get_prompts import *
+from test_code import *
 
 
 def json_to_file(data, json_path):
