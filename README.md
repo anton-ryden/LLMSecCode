@@ -6,6 +6,17 @@ Brief description of your project.
 
 Provide a brief overview of the project, its purpose, and any key features.
 
+## File Explanation
+
+- **gptq.py**: Main file responsible for loading the model and calling functions.
+
+- **arguments.py**: Used for setting up the argument parser.
+
+- **get_prompts.py**: Handles the retrieval of prompts from the dataset.
+
+- **test_code.py**: Facilitates the testing of whether an answer is a correct fix.
+
+
 ## Installation
 
 You can install all the required dependencies by running:
@@ -13,7 +24,7 @@ You can install all the required dependencies by running:
 pip install -r requirements.txt
 ```
 
-However some of the dependencies might need to be installed in another way for certain CUDA or Rocm support.
+However some of the dependencies might need to be installed in another way to get CUDA or Rocm support.
 ## Usage
 Here is an example of how to run the program 
 ```
