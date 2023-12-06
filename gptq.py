@@ -3,11 +3,14 @@ import time
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from argument import parse_args, get_chat_template
 from get_prompts import get_prompts
+import test_code
+
 
 def json_to_file(data, json_path):
     # Write JSON into a file
     with open(json_path, "w") as json_file:
         json.dump(data, json_file, indent=4)
+
 
 def extract_code(input_string, inst_end):
     # Extract code block between ``` and ```
@@ -18,6 +21,7 @@ def extract_code(input_string, inst_end):
         return input_string[start_index + len(inst_end) : end_index].strip()
     else:
         return None
+
 
 def format_response(elapsed_time, answer_text, patch_nr, prompt):
     # Remove instructions from response
@@ -56,16 +60,20 @@ def format_response(elapsed_time, answer_text, patch_nr, prompt):
 
     prompt.append({"role": "assistant", "content": answer_without_instruction})
 
+    is_code_fixed = test_code(fixed_code)
+
     ret = {
         f"patch nr: {patch_nr}": {
             "conversation_json": prompt,
             "without_instruction": json_without_prompt,
             "fixed_code": json_code,
             "time_s": elapsed_time,
+            "fixed error": is_code_fixed,
         }
     }
 
     return ret
+
 
 def load_model(model_cache_dir, chat_template, model_id):
     # Load model and tokenizer on GPU
@@ -82,6 +90,7 @@ def load_model(model_cache_dir, chat_template, model_id):
     tokenizer.chat_template = chat_template
 
     return model, tokenizer
+
 
 def generate_answers(tokenizer, model, inst_end):
     prompts = get_prompts()  # Get prompts
@@ -113,6 +122,7 @@ def generate_answers(tokenizer, model, inst_end):
 
     return answers
 
+
 if __name__ == "__main__":
     # Initialize arguments
     args = parse_args()
@@ -130,6 +140,6 @@ if __name__ == "__main__":
     json_data = generate_answers(tokenizer, model, inst_end)
 
     json.dumps(json_data, indent=4)
-    
+
     # Write JSON into a file
     json_to_file(json_data, args.json_path)

@@ -2,30 +2,30 @@ import argparse
 
 # Note codewizard does not work atm
 def parse_args():
-    parser = argparse.ArgumentParser(description="Choose template set.")
+    parser = argparse.ArgumentParser(description="This is option of arguments.")
     parser.add_argument(
         "--template_set",
         choices=["llama", "codewizard"],
         default="llama",
-        help="Choose the set of templates to use (llama or codewizard)",
+        help="Choose the set of templates to use (llama or codewizard).\n Default is %(default)s.",
     )
     parser.add_argument(
         "--model_id",
         type=str,
         default="TheBloke/CodeLlama-7B-Instruct-GPTQ",
-        help="Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ",
+        help="Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ.\n Default is %(default)s.",
     )
     parser.add_argument(
         "--model_path",
         type=str,
         default="./models",
-        help="Specify where to look and save models to",
+        help="Specify where to look and save models to.\n Default is %(default)s.",
     )
     parser.add_argument(
         "--json_path",
         type=str,
         default="./answers.json",
-        help="Specify path and name for the JSON file",
+        help="Specify path and name for the JSON file. Default is %(default)s.",
     )
     parser.add_argument(
         "--patches_per_bug",
