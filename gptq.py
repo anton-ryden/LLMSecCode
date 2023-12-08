@@ -13,37 +13,33 @@ def json_to_file(data, json_path):
         json.dump(data, json_file, indent=4)
 
 
-def extract_code(input_string, inst_end):
+def extract_code(input_string):
     # Extract code block between ``` and ```
-    start_index = input_string.find("```")
-    end_index = input_string.rfind("```")
+    input_string = input_string.lstrip()
 
-    if start_index != -1 and end_index != -1 and start_index < end_index:
-        return input_string[start_index + len(inst_end) : end_index].strip()
+    if len(input_string) > 0:
+        return input_string
     else:
         return None
 
 
-def format_response(elapsed_time, answer_text, patch_nr, prompt):
+def format_response(elapsed_time, answer_text, patch_nr, prompt, tokenized_chat):
     # Remove instructions from response
-    answer_without_instruction = answer_text[
-        answer_text.rfind(inst_end)
-        + len(inst_end) : (len(answer_text) - len(tokenizer.eos_token))
-    ]
-
+    answ_no_ins = answer_text.replace(tokenized_chat, "")
+    answ_no_ins = answ_no_ins[: len(answ_no_ins) - len(tokenizer.eos_token)]
     # Format response and calculate token/s
-    tokens_generated_prompt = len(tokenizer.encode(answer_without_instruction))
+    tokens_generated_prompt = len(tokenizer.encode(answ_no_ins))
     tokens_per_second_prompt = tokens_generated_prompt / elapsed_time
     json_without_prompt = [
         {
-            "answer": answer_without_instruction,
+            "answer": answ_no_ins,
             "tokens_generated": tokens_generated_prompt,
             "tokens_per_second": tokens_per_second_prompt,
         }
     ]
 
     # Format response and calculate token/s
-    fixed_code = extract_code(answer_without_instruction, inst_end)
+    fixed_code = extract_code(answ_no_ins)
 
     # If response is formatted incorrectly
     tokens_generated_fixed = 0
@@ -59,7 +55,7 @@ def format_response(elapsed_time, answer_text, patch_nr, prompt):
         }
     ]
 
-    prompt.append({"role": "assistant", "content": answer_without_instruction})
+    prompt.append({"role": "assistant", "content": answ_no_ins})
 
     is_code_fixed = test_code(fixed_code)
 
@@ -97,7 +93,7 @@ def load_model(model_cache_dir, chat_template, model_id):
     return model, tokenizer
 
 
-def generate_answers(tokenizer, model, inst_end):
+def generate_answers(tokenizer, model):
     prompts = get_prompts()  # Get prompts
     answers = []
 
@@ -108,7 +104,7 @@ def generate_answers(tokenizer, model, inst_end):
             start_time = time.time()
 
             tokenized_chat = tokenizer.apply_chat_template(
-                prompt, tokenize=True, add_generation_prompt=True, return_tensors="pt"
+                prompt, tokenize=True, add_generation_prompt=False, return_tensors="pt"
             ).to("cuda")
             outputs = model.generate(tokenized_chat, max_new_tokens=args.max_new_tokens)
             llm_response = tokenizer.decode(
@@ -119,7 +115,11 @@ def generate_answers(tokenizer, model, inst_end):
             elapsed_time = end_time - start_time
 
             formatted_response = format_response(
-                elapsed_time, llm_response, patch_nr, copy.copy(prompt)
+                elapsed_time,
+                llm_response,
+                patch_nr,
+                copy.copy(prompt),
+                tokenizer.decode(tokenized_chat[0]),
             )
             patches.append(formatted_response)
 
@@ -128,19 +128,35 @@ def generate_answers(tokenizer, model, inst_end):
 
         answers.append({f"bug nr: {bug_nr + 1}": patches})
 
+    print("\n")
+
     return answers
 
-def print_progress_bar(bug_iteration, bug_total, patch_iteration, patch_total, prefix='Progress', suffix='Complete', length=50, fill='█'):
+
+def print_progress_bar(
+    bug_iteration,
+    bug_total,
+    patch_iteration,
+    patch_total,
+    prefix="Progress",
+    suffix="Complete",
+    length=50,
+    fill="█",
+):
     bug_percent = ("{0:.1f}").format(100 * (bug_iteration / float(bug_total)))
     patch_percent = ("{0:.1f}").format(100 * (patch_iteration / float(patch_total)))
 
     bug_filled_length = int(length * bug_iteration // bug_total)
     patch_filled_length = int(length * patch_iteration // patch_total)
 
-    bug_bar = fill * bug_filled_length + '-' * (length - bug_filled_length)
-    patch_bar = fill * patch_filled_length + '-' * (length - patch_filled_length)
+    bug_bar = fill * bug_filled_length + "-" * (length - bug_filled_length)
+    patch_bar = fill * patch_filled_length + "-" * (length - patch_filled_length)
 
-    print(f'\r{prefix} |Bug {bug_bar}| {bug_percent}% |Patch {patch_bar}| {patch_percent}% {suffix}', end='', flush=True)
+    print(
+        f"\r{prefix} |Bug {bug_bar}| {bug_percent}% |Patch {patch_bar}| {patch_percent}% {suffix}",
+        end="",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
@@ -148,7 +164,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Get the selected template set
-    chat_template, inst_end = get_chat_template(args.template_set)
+    chat_template = get_chat_template(args.template_set)
 
     # Change cache to the model directory
     model_cache_dir = args.model_path
@@ -157,7 +173,7 @@ if __name__ == "__main__":
     model, tokenizer = load_model(model_cache_dir, chat_template, args.model_id)
 
     # Generate answers
-    json_data = generate_answers(tokenizer, model, inst_end)
+    json_data = generate_answers(tokenizer, model)
 
     json.dumps(json_data, indent=4)
 

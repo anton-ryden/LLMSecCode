@@ -12,7 +12,7 @@ def get_prompts():
     system_prompt = [
         {
             "role": "system",
-            "content": "You are an automatic program repair bot that improves code. Always answer with code and only code. Also wrap the code in ```",
+            "content": "You are an automatic program repair bot that improves code. Always answer with code and only code. And you provide only one solution.",
         }
     ]
 
