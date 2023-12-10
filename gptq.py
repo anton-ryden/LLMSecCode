@@ -14,10 +14,12 @@ def json_to_file(data, json_path):
 
 
 def extract_code(input_string):
-    # Extract code block between ``` and ```
-    input_string = input_string.lstrip()
+    start_index = input_string.find("```")
+    end_index = input_string.rfind("```")  # Start searching after the first triple backticks    
 
-    if len(input_string) > 0:
+    if start_index != -1 and end_index != -1:
+        input_string = input_string[start_index+3:end_index]
+        input_string = input_string.lstrip()
         return input_string
     else:
         return None
@@ -73,13 +75,13 @@ def format_response(elapsed_time, answer_text, patch_nr, prompt, tokenized_chat)
 
 
 def load_model(model_cache_dir, chat_template, model_id):
-    print("Model Loading starting\n")
+    print("Model Loading starting")
 
     # Load model and tokenizer on GPU
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         device_map="cuda:0",
-        trust_remote_code=False,
+        trust_remote_code=True,
         cache_dir=model_cache_dir,
     )
     tokenizer = AutoTokenizer.from_pretrained(
@@ -126,7 +128,8 @@ def generate_answers(tokenizer, model):
             # Print progress
             print_progress_bar(bug_nr, len(prompts), patch_nr, args.patches_per_bug)
 
-        answers.append({f"bug nr: {bug_nr + 1}": patches})
+        print_progress_bar(bug_nr + 1, len(prompts), patch_nr, args.patches_per_bug)
+        answers.append({f"bug nr: {bug_nr +1}": patches})
 
     print("\n")
 

@@ -2,7 +2,7 @@
 def get_prompts():
     user_input_template = """
     def function():
-        user_expression = input('\nYour expression? => ')
+        user_expression = input('Your expression? => ')
         if not user_expression:
             print("No input")
         else:
@@ -12,7 +12,7 @@ def get_prompts():
     system_prompt = [
         {
             "role": "system",
-            "content": "You are an automatic program repair bot that improves code. Always answer with code and only code. And you provide only one solution.",
+            "content": "You are an automatic program repair bot. You provide code and wrap the code with ```",
         }
     ]
 
