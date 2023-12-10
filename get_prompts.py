@@ -1,7 +1,6 @@
 # Everything is hardcoded but should be changed to loading from dataset. Return list of str
 def get_prompts():
-    user_input_template = """
-    def function():
+    user_input_template = """def function():
         user_expression = input('Your expression? => ')
         if not user_expression:
             print("No input")

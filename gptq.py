@@ -1,6 +1,7 @@
 import json
 import time
 import copy
+from transformers.generation import GenerationConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from argument import parse_args, get_chat_template
 from get_prompts import *
@@ -15,10 +16,12 @@ def json_to_file(data, json_path):
 
 def extract_code(input_string):
     start_index = input_string.find("```")
-    end_index = input_string.rfind("```")  # Start searching after the first triple backticks    
+    end_index = input_string.rfind(
+        "```"
+    )  # Start searching after the first triple backticks
 
     if start_index != -1 and end_index != -1:
-        input_string = input_string[start_index+3:end_index]
+        input_string = input_string[start_index + 3 : end_index]
         input_string = input_string.lstrip()
         return input_string
     else:
@@ -96,8 +99,17 @@ def load_model(model_cache_dir, chat_template, model_id):
 
 
 def generate_answers(tokenizer, model):
+    gen_cfg = GenerationConfig.from_model_config(model.config)
+
     prompts = get_prompts()  # Get prompts
     answers = []
+
+    tokenized_chats = [
+        tokenizer.apply_chat_template(
+            prompt, tokenize=True, add_generation_prompt=False, return_tensors="pt"
+        ).to("cuda")
+        for prompt in prompts
+    ]
 
     for bug_nr, prompt in enumerate(prompts):
         patches = []
@@ -105,10 +117,13 @@ def generate_answers(tokenizer, model):
         for patch_nr in range(1, args.patches_per_bug + 1):
             start_time = time.time()
 
-            tokenized_chat = tokenizer.apply_chat_template(
-                prompt, tokenize=True, add_generation_prompt=False, return_tensors="pt"
-            ).to("cuda")
-            outputs = model.generate(tokenized_chat, max_new_tokens=args.max_new_tokens)
+            tokenized_chat = tokenized_chats[bug_nr]
+
+            outputs = model.generate(
+                tokenized_chat,
+                max_new_tokens=args.max_new_tokens,
+                generation_config=gen_cfg,
+            )
             llm_response = tokenizer.decode(
                 outputs[0], clean_up_tokenization_spaces=False
             )
