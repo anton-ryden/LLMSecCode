@@ -121,18 +121,14 @@ def load_model(
 def evaluate(
     tokenizer: PreTrainedTokenizer, model: PreTrainedModel, patches_per_bug
 ) -> List[dict]:
-    gen_cfg = GenerationConfig.from_model_config(model.config)
-
     prompts = get_prompts()
     bug_json = {}
-
-    print_progress_bar(0, len(prompts) * patches_per_bug)
 
     for bug_nr, prompt in enumerate(prompts):
         start_time = time.time()
 
         llm_response, tokenized_chat = batch_completion(
-            model, tokenizer, gen_cfg, prompt, patches_per_bug
+            model, tokenizer, prompt, patches_per_bug, bug_nr, len(prompts)
         )
 
         end_time = time.time()
@@ -144,11 +140,6 @@ def evaluate(
             tokenizer,
             tokenizer.decode(tokenized_chat),
             prompt,
-        )
-
-        # Print progress
-        print_progress_bar(
-            (bug_nr + 1) * patches_per_bug, len(prompts) * patches_per_bug
         )
 
         key = "bug nr: " + str(bug_nr + 1)
@@ -163,33 +154,38 @@ def evaluate(
 def batch_completion(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
-    gen_cfg: GenerationConfig,
     prompt,
     patch_size,
+    bug_nr,
+    total_bugs,
 ) -> Tuple[List[str], torch.Tensor]:
-    inputs = []
-    for _ in range(patch_size):
-        inputs.append(
-            tokenizer.apply_chat_template(prompt, return_tensors="pt").to("cuda")
+    input = None
+    batch_completions = []
+    gen_cfg = GenerationConfig.from_model_config(model.config)
+    
+    for patch_nr in range(1, patch_size+1):
+        input = tokenizer.apply_chat_template(prompt, return_tensors="pt").to("cuda")
+
+        generated_ids = model.generate(
+            input,
+            use_cache=True,
+            max_new_tokens=args.max_new_tokens,
+            generation_config=gen_cfg,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            do_sample=True,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.eos_token_id,
         )
 
-    input_tensor = torch.cat(inputs, dim=0)
+        batch_completions.append(tokenizer.decode(generated_ids[0]))
 
-    generated_ids = model.generate(
-        input_tensor,
-        use_cache=True,
-        max_new_tokens=args.max_new_tokens,
-        generation_config=gen_cfg,
-        temperature=args.temperature,
-        top_p=args.top_p,
-        do_sample=True,
-        eos_token_id=tokenizer.eos_token_id,
-        pad_token_id=tokenizer.eos_token_id,
-    )
+        # Print progress
+        print_progress_bar(
+            (bug_nr * patch_size) + patch_nr, total_bugs * patch_size
+        )
 
-    batch_completions = tokenizer.batch_decode(generated_ids)
-
-    return batch_completions, inputs[0][0]
+    return batch_completions, input[0]
 
 
 def print_progress_bar(
