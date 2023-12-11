@@ -1,5 +1,8 @@
+from typing import List, Dict
+
+
 # Everything is hardcoded but should be changed to loading from dataset. Return list of str
-def get_prompts():
+def get_prompts() -> List[List[Dict[str, str]]]:
     user_input_template = """def function():
         user_expression = input('Your expression? => ')
         if not user_expression:

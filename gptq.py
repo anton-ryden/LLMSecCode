@@ -1,6 +1,7 @@
 import json
 import time
 import copy
+from typing import Union, Tuple
 from transformers.generation import GenerationConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from argument import parse_args, get_chat_template
@@ -8,13 +9,13 @@ from get_prompts import *
 from test_code import *
 
 
-def json_to_file(data, json_path):
+def json_to_file(data: dict, json_path: str) -> None:
     # Write JSON into a file
     with open(json_path, "w") as json_file:
-        json.dump(data, json_file, indent=4)
+        json.dump(data, json_file, indent=6)
 
 
-def extract_code(input_string):
+def extract_code(input_string: str) -> Union[str, None]:
     start_index = input_string.find("```")
     end_index = input_string.rfind(
         "```"
@@ -28,7 +29,13 @@ def extract_code(input_string):
         return None
 
 
-def format_response(elapsed_time, answer_text, patch_nr, prompt, tokenized_chat):
+def format_response(
+    elapsed_time: float,
+    answer_text: str,
+    patch_nr: int,
+    prompt: list,
+    tokenized_chat: str,
+) -> dict:
     # Remove instructions from response
     answ_no_ins = answer_text.replace(tokenized_chat, "")
     answ_no_ins = answ_no_ins[: len(answ_no_ins) - len(tokenizer.eos_token)]
@@ -77,7 +84,9 @@ def format_response(elapsed_time, answer_text, patch_nr, prompt, tokenized_chat)
     return ret
 
 
-def load_model(model_cache_dir, chat_template, model_id):
+def load_model(
+    model_cache_dir: str, chat_template: str, model_id: str
+) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
     print("Model Loading starting")
 
     # Load model and tokenizer on GPU
@@ -86,7 +95,7 @@ def load_model(model_cache_dir, chat_template, model_id):
         device_map="cuda:0",
         trust_remote_code=True,
         cache_dir=model_cache_dir,
-    )
+    ).eval()
     tokenizer = AutoTokenizer.from_pretrained(
         model_id, use_fast=True, device_map="cuda:0", cache_dir=model_cache_dir
     )
@@ -98,7 +107,9 @@ def load_model(model_cache_dir, chat_template, model_id):
     return model, tokenizer
 
 
-def generate_answers(tokenizer, model):
+def generate_answers(
+    tokenizer: AutoTokenizer, model: AutoModelForCausalLM
+) -> List[dict]:
     gen_cfg = GenerationConfig.from_model_config(model.config)
 
     prompts = get_prompts()  # Get prompts
@@ -117,12 +128,15 @@ def generate_answers(tokenizer, model):
         for patch_nr in range(1, args.patches_per_bug + 1):
             start_time = time.time()
 
-            tokenized_chat = tokenized_chats[bug_nr]
+            tokenized_chat = tokenized_chats[bug_nr].to("cuda")
 
             outputs = model.generate(
                 tokenized_chat,
                 max_new_tokens=args.max_new_tokens,
                 generation_config=gen_cfg,
+                temperature=0.8,
+                top_p=0.95,
+                do_sample=True,
             )
             llm_response = tokenizer.decode(
                 outputs[0], clean_up_tokenization_spaces=False
@@ -152,15 +166,15 @@ def generate_answers(tokenizer, model):
 
 
 def print_progress_bar(
-    bug_iteration,
-    bug_total,
-    patch_iteration,
-    patch_total,
-    prefix="Progress",
-    suffix="Complete",
-    length=50,
-    fill="█",
-):
+    bug_iteration: int,
+    bug_total: int,
+    patch_iteration: int,
+    patch_total: int,
+    prefix: str = "Progress",
+    suffix: str = "Complete",
+    length: int = 50,
+    fill: str = "█",
+) -> None:
     bug_percent = ("{0:.1f}").format(100 * (bug_iteration / float(bug_total)))
     patch_percent = ("{0:.1f}").format(100 * (patch_iteration / float(patch_total)))
 
@@ -192,8 +206,6 @@ if __name__ == "__main__":
 
     # Generate answers
     json_data = generate_answers(tokenizer, model)
-
-    json.dumps(json_data, indent=4)
 
     # Write JSON into a file
     json_to_file(json_data, args.json_path)
