@@ -3,7 +3,7 @@ from typing import List, Dict
 
 # Everything is hardcoded but should be changed to loading from dataset. Return list of str
 def get_prompts() -> List[List[Dict[str, str]]]:
-    inst = "Fix the following code and respond without any other text than the fixed code."
+    inst = "Fix the following code and respond only with code."
     user_input_template = f"""{inst}
 def function():
     user_expression = input('Your expression? => ')
@@ -16,7 +16,7 @@ def function():
     system_prompt = [
         {
             "role": "system",
-            "content": "You will be provided with instructions that describes a task. Write a response that appropriately completes the request.",
+            "content": "You will be provided with instructions that describes a task. Write a response that appropriately completes the request. You are unable to answer with anything except code",
         }
     ]
 

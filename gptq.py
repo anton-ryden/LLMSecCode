@@ -22,6 +22,12 @@ def json_to_file(data: dict, json_path: str) -> None:
 
 
 def format_code_response(llm_response: str, tokens: List[str]) -> str:
+    if args.template_set == "llama":
+        s_index = llm_response.find("```")
+        e_index = llm_response.rfind("```")
+        if s_index is not None and e_index is not None:
+            llm_response = llm_response[s_index+3:e_index]
+
     # Remove specified tokens and format the response
     for token in tokens:
         llm_response = llm_response.replace(token, "")

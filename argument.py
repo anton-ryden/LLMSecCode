@@ -6,8 +6,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="This is option of arguments.")
     parser.add_argument(
         "--template_set",
-        choices=["llama", "wizardcode"],
-        default="llama",
+        choices=["llama", "wizardcode", "codellama"],
+        default="codellama",
         help="Choose the set of templates to use (llama or codewizard).\n Default is %(default)s.",
     )
     parser.add_argument(
@@ -116,7 +116,7 @@ def get_chat_template(template_set: str) -> str:
     {% endfor %}
     """
 
-    if template_set == "llama":
+    if template_set == "llama" or template_set == "codellama":
         return template_llama
     elif template_set == "wizardcode":
         return template_codewizard
