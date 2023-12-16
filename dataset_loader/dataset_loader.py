@@ -23,7 +23,7 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def test_code(self) -> List[List[Dict[str, str]]]:
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
         pass
 
     @staticmethod
@@ -32,30 +32,29 @@ class DatasetLoader(ABC):
 {bug}"""
 
     @staticmethod
-    def check_python_syntax(code: str, language: str) -> dict:
+    def check_python_syntax(code: str) -> dict:
         error_message = ""
         syntax_error = False
-        if language == "python":
-            try:
-                if code is not None:
-                    compile(code, filename="<string>", mode="exec")
-                    syntax_error = False
-                else:
-                    syntax_error = True
-
-            except SyntaxError as e:
-                # Extract line and column information
-                line_number, column_offset = e.lineno, e.offset
-                lines = code.split("\n")
-                error_line = lines[line_number - 1]
-
-                error_message += (
-                    f"SyntaxError at line {line_number}, column {column_offset}:\n"
-                )
-                error_message += error_line + "\n"
-                error_message += " " * (column_offset - 1) + "^\n"
-                error_message += f"{type(e).__name__}: {e}\n"
+        try:
+            if code is not None:
+                compile(code, filename="<string>", mode="exec")
+                syntax_error = False
+            else:
                 syntax_error = True
+
+        except SyntaxError as e:
+            # Extract line and column information
+            line_number, column_offset = e.lineno, e.offset
+            lines = code.split("\n")
+            error_line = lines[line_number - 1]
+
+            error_message += (
+                f"SyntaxError at line {line_number}, column {column_offset}:\n"
+            )
+            error_message += error_line + "\n"
+            error_message += " " * (column_offset - 1) + "^\n"
+            error_message += f"{type(e).__name__}: {e}\n"
+            syntax_error = True
 
         return {"syntax_error": syntax_error, "error_message": error_message}
 
@@ -88,11 +87,12 @@ class DatasetLoader(ABC):
         patches: List[List[str]],
         tot_time: List[float],
         tokens_generated: List[float],
+        test_data_list: List[Dict]
     ) -> List[dict]:
         bugs = []
 
-        for id, prompt, patch, time, tokens in zip(
-            ids, prompts, patches, tot_time, tokens_generated
+        for id, prompt, patch, time, tokens, test_data in zip(
+            ids, prompts, patches, tot_time, tokens_generated, test_data_list
         ):
             bugs.append(
                 {
@@ -101,6 +101,8 @@ class DatasetLoader(ABC):
                         "patches": patch,
                         "time_s": time,
                         "tokens generated": tokens,
+                        "tokens/s": tokens/time,
+                        "test data": test_data,
                     }
                 }
             )

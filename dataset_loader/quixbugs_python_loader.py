@@ -47,3 +47,11 @@ class QuixBugsPythonLoader(DatasetLoader):
     def format_code_responses(self, responses: List[List[str]]) -> List[List[str]]:
         return super().format_python_responses(responses)
     
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
+        return_values = []
+        for id, patches in zip(ids, patch_list):
+            for patch in patches:
+                syntax_error = super().check_python_syntax(patch)
+                return_values.append(syntax_error)
+        
+        return return_values

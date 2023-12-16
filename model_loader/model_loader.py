@@ -61,7 +61,6 @@ class ModelLoader:
         dataset_prompts = dataset_loader.prompts
         print("Generating answers for dataset: " + dataset_loader.name)
 
-        temp = 0
         for bug_nr, dataset_prompt in enumerate(dataset_prompts):
             prompt = list(dataset_prompt.values())[0]
             patches, tot_time = self.batch_completion(
@@ -70,9 +69,6 @@ class ModelLoader:
             # id = list(dataset_prompt.keys())[0]
             ret_responses.append(patches)
             ret_tot_time.append(tot_time)
-            temp += 1
-            if temp == 2:
-                break
 
         return ret_responses, ret_tot_time
 

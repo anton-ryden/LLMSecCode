@@ -29,12 +29,14 @@ def evaluate(
             no_inst = model_loader.format_responses(prompts, responses)
             only_code = dataset_loader.format_code_responses(no_inst)
 
+            test_info = dataset_loader.test_code(ids, only_code)
+
             # Get tokens generated
             tokens_generated = model_loader.get_tokens_generated(no_inst)
             
             # Format patches
             formatted_patches = dataset_loader.format_patches(
-                ids, prompts, only_code, tot_time, tokens_generated
+                ids, prompts, only_code, tot_time, tokens_generated, test_info
             )
 
             # Append results for the current dataset

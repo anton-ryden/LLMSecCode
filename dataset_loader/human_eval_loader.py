@@ -19,3 +19,6 @@ class HumanEvalLoader(DatasetLoader):
 
     def format_code_responses(self, response: List[str]) -> List[str]:
         pass
+
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
+        pass
