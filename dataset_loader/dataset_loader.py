@@ -1,5 +1,6 @@
 from typing import List, Dict
 from abc import ABC, abstractmethod
+import re
 
 
 class DatasetLoader(ABC):
@@ -61,21 +62,61 @@ class DatasetLoader(ABC):
     @staticmethod
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
         ret_responses = []
+        
+        # Regular expression to match Python code patterns
+        python_code_pattern = re.compile(r'\b(?:import|def|class|for|while|if|else|elif|try|except|with|finally|raise|return|yield|from|import)\b')
+
         for patches in responses:
             patches_code = []
             for patch in patches:
-                # Formatting response for python bugs
-                index_import = patch.find("import")
-                index_def = patch.find("def")
-                first_index = min(
-                    index_import if index_import != -1 else float("inf"),
-                    index_def if index_def != -1 else float("inf"),
-                )
+                # Find the first match of the pattern in the string
+                match = python_code_pattern.search(patch)
+                
+                if match:
+                    # Extract code starting from the match
+                    start_index = match.start()
+                    patches_code.append(patch[start_index:])
+                else:
+                    # If no match found make empty
+                    patches_code.append("")
 
-                if first_index != float("inf"):
-                    patch = patch[int(first_index) :]
+            ret_responses.append(patches_code)
 
-                patches_code.append(patch)
+        return ret_responses
+    
+    @staticmethod
+    def format_java_responses(responses: List[List[str]]) -> List[List[str]]:
+        ret_responses = []
+        
+        # Regular expressions to match various Java code patterns
+        start_pattern = re.compile(r'\b(?:class|public|private|protected|void)\b')
+        end_pattern = re.compile(r'[{;]')  # Assuming that "{" or ";" indicates the end of a code block
+
+        for patches in responses:
+            patches_code = []
+            for patch in patches:
+                # Find the first match of the start pattern in the string
+                start_match = start_pattern.search(patch)
+                
+                if start_match:
+                    # Extract code starting from the match
+                    start_index = start_match.start()
+                    code_start = patch[start_index:]
+                    
+                    # Find the first match of the end pattern after the start
+                    end_match = end_pattern.search(code_start)
+                    
+                    if end_match:
+                        # Extract code up to the end match
+                        end_index = end_match.start()
+                        patches_code.append(code_start[:end_index])
+                    else:
+                        # If no end match found, keep the original code
+                        patches_code.append(code_start)
+                else:
+                    # If no start match found, keep the original patch
+                    patches_code.append(patch)
+
             ret_responses.append(patches_code)
 
         return ret_responses
@@ -100,9 +141,9 @@ class DatasetLoader(ABC):
                         "prompt": prompt,
                         "patches": patch,
                         "time_s": time,
-                        "tokens generated": tokens,
+                        "tokens_generated": tokens,
                         "tokens/s": tokens/time,
-                        "test data": test_data,
+                        "test_data": test_data,
                     }
                 }
             )
