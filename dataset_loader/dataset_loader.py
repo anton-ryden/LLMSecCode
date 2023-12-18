@@ -132,21 +132,37 @@ class DatasetLoader(ABC):
     ) -> List[dict]:
         bugs = []
 
-        for id, prompt, patch, time, tokens, test_data in zip(
+        for id, prompt, patch, time, tokens, test_data_l in zip(
             ids, prompts, patches, tot_time, tokens_generated, test_data_list
         ):
             bugs.append(
                 {
                     id: {
                         "prompt": prompt,
-                        "patches": patch,
+                        "patches": format_patch(patch, test_data_l),
                         "time_s": time,
                         "tokens_generated": tokens,
                         "tokens/s": tokens/time,
-                        "test_data": test_data,
                     }
                 }
             )
 
         return bugs
+    
+
+def format_patch(
+    patches: List[List[str]],
+    test_data_list: List[Dict]
+) -> List[dict]:
+    patch_list = []
+
+    for patch, test_data in zip(patches, test_data_list):
+        patch_list.append(
+            {
+                "patch": patch,
+                "test_data": test_data,   
+            }
+        )
+
+    return patch_list
     

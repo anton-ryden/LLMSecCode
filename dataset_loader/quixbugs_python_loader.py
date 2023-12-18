@@ -48,10 +48,12 @@ class QuixBugsPythonLoader(DatasetLoader):
         return super().format_python_responses(responses)
     
     def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
-        return_values = []
+        bug_list = []
         for id, patches in zip(ids, patch_list):
+            patch_list = []
             for patch in patches:
                 syntax_error = super().check_python_syntax(patch)
-                return_values.append(syntax_error)
+                patch_list.append(syntax_error)
+            bug_list.append(patch_list)
         
-        return return_values
+        return bug_list
