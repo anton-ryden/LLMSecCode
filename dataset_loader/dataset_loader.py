@@ -1,6 +1,7 @@
 from typing import List, Dict
 from abc import ABC, abstractmethod
 import re
+import subprocess
 
 
 class DatasetLoader(ABC):
@@ -24,7 +25,7 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> (List[Dict], List[Dict]):
         pass
 
     @staticmethod
@@ -89,7 +90,7 @@ class DatasetLoader(ABC):
         ret_responses = []
         
         # Regular expressions to match various Java code patterns
-        start_pattern = re.compile(r'\b(?:class|public|private|protected|void)\b')
+        start_pattern = re.compile(r'\b(?:package|class|public|private|protected|void)\b')
         end_pattern = re.compile(r'[{;]')  # Assuming that "{" or ";" indicates the end of a code block
 
         for patches in responses:
@@ -120,6 +121,39 @@ class DatasetLoader(ABC):
             ret_responses.append(patches_code)
 
         return ret_responses
+    
+    @staticmethod
+    def check_java_syntax(file_path: str) -> dict:
+      error_message = ""
+      syntax_error = False
+      line_number = None
+
+      try:
+          if file_path is not None:
+              # Use subprocess to invoke the Java compiler directly on the file
+              result = subprocess.run(["javac", file_path], check=True, stderr=subprocess.PIPE, text=True)
+              syntax_error = False
+          else:
+              syntax_error = True
+
+      except subprocess.CalledProcessError as e:
+          syntax_error = True
+          error_message += f"JavaSyntaxError:\n"
+
+          # Check if stderr is not None before decoding
+          if e.stderr is not None:
+              error_message += e.stderr
+
+              # Extract line number from the error message
+              match = re.search(r"error:.*:(\d+):", e.stderr)
+              if match:
+                  line_number = int(match.group(1))
+
+          else:
+              error_message += "No stderr output available."
+
+      return {"syntax_error": syntax_error, "error_message": error_message, "line_number": line_number}
+  
 
     @staticmethod
     def format_patches(
@@ -128,18 +162,20 @@ class DatasetLoader(ABC):
         patches: List[List[str]],
         tot_time: List[float],
         tokens_generated: List[float],
-        test_data_list: List[Dict]
+        test_data_list: List[Dict],
+        test_result_list: List[Dict]
+        
     ) -> List[dict]:
         bugs = []
 
-        for id, prompt, patch, time, tokens, test_data_l in zip(
-            ids, prompts, patches, tot_time, tokens_generated, test_data_list
+        for id, prompt, patch, time, tokens, test_data_l,test_result_1 in zip(
+            ids, prompts, patches, tot_time, tokens_generated, test_data_list, test_result_list
         ):
             bugs.append(
                 {
                     id: {
                         "prompt": prompt,
-                        "patches": format_patch(patch, test_data_l),
+                        "patches": format_patch(patch, test_data_l,test_result_1),
                         "time_s": time,
                         "tokens_generated": tokens,
                         "tokens/s": tokens/time,
@@ -152,15 +188,17 @@ class DatasetLoader(ABC):
 
 def format_patch(
     patches: List[List[str]],
-    test_data_list: List[Dict]
+    test_data_list: List[Dict],
+    test_result_list: List[Dict]
 ) -> List[dict]:
     patch_list = []
 
-    for patch, test_data in zip(patches, test_data_list):
+    for patch, test_data, test_result in zip(patches, test_data_list,test_result_list):
         patch_list.append(
             {
                 "patch": patch,
-                "test_data": test_data,   
+                "test_data": test_data, 
+                "test_result":  test_result,
             }
         )
 
