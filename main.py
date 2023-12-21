@@ -79,14 +79,14 @@ def evaluate_single_model_on_dataset(
     no_instruction = model_loader.format_responses(prompts, responses)
     only_code = dataset_loader.format_code_responses(no_instruction)
 
-    test_info,test_result = dataset_loader.test_code(ids, only_code)
-    
+    test_result = dataset_loader.test_code(ids, only_code)
+
     # Get tokens generated
     tokens_generated = model_loader.get_tokens_generated(no_instruction)
 
     # Format patches
     formatted_patches = dataset_loader.format_patches(
-        ids, prompts, only_code, tot_time, tokens_generated, test_info,test_result
+        ids, prompts, only_code, tot_time, tokens_generated, test_result
     )
 
     return formatted_patches

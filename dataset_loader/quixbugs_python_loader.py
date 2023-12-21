@@ -5,6 +5,7 @@ import logging
 import subprocess
 import re
 from dataset_loader.dataset_loader import DatasetLoader
+from utils import print_progress_bar
 
 
 PYTHON_DIR = "./QuixBugs/python_programs_bug"
@@ -48,63 +49,77 @@ class QuixBugsPythonLoader(DatasetLoader):
 
     def format_code_responses(self, responses: List[List[str]]) -> List[List[str]]:
         return super().format_python_responses(responses)
-    
+
     def run_tests(self, program_path: str) -> (int, int):
         command = f"pytest {program_path}"
-        
+
         # Run the pytest command and capture the output
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         if result:
-        # Extract the last line from the output
+            # Extract the last line from the output
             last_line = result.stdout.strip().splitlines()[-1]
-             # Use a regular expression to find the number of failed and passed tests   
+            # Use a regular expression to find the number of failed and passed tests
             match = re.search(r"(\d+)(?: failed)?(?:,\s*(\d+) passed)?", last_line)
 
             # Extract the number of failed and passed tests if a match is found
-            failed_tests_count = int(match.group(1)) if match.group(1) is not None else 0
-            passed_tests_count = int(match.group(2)) if match.group(2) is not None else 0
+            failed_tests_count = (
+                int(match.group(1)) if match.group(1) is not None else 0
+            )
+            passed_tests_count = (
+                int(match.group(2)) if match.group(2) is not None else 0
+            )
         else:
             failed_tests_count = 0
             passed_tests_count = 0
-                   
+
         return failed_tests_count, passed_tests_count
-    
-    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> (List[Dict], List[Dict]):
+
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        bug_list = []
         result_list = []
-        for id, patches in zip(ids, patch_list):
-            patch_list = []
+        bug_nr = 0
+
+        print("Starting testing for: " + self.name)
+        for id, bugs in zip(ids, patch_list):
             test_list = []
-            for patch in patches:
-                syntax_error = super().check_python_syntax(patch)
-                # Get the function name from the code
-                function_name = patch.split("(")[0].split()[-1]
-                # Write the code to a file with a name derived from the function name
-                file_name = f"{function_name}.py"
+            for patch_nr, patch in enumerate(bugs, start=1):
+                # File paths
                 dynamic_directory = "./QuixBugs/python_programs"
                 test_module_directory = "./QuixBugs/python_testcases"
-                program_paths = os.path.join(test_module_directory, f"test_{os.path.splitext(function_name)[0]}.py")
-                dynamic_file_path = os.path.join(dynamic_directory, file_name)
-                # Create the directory if it doesn't exist
+                program_paths = os.path.join(test_module_directory, f"test_{id}")
+                dynamic_file_path = os.path.join(dynamic_directory, id)
+
+                # Create the directory if it doesn't exist and write patch to file
                 os.makedirs(dynamic_directory, exist_ok=True)
-                with open(dynamic_file_path, 'w') as file:
+                with open(dynamic_file_path, "w") as file:
                     file.write(patch)
-                if(syntax_error):
-                    failed_count,passed_count = self.run_tests(program_paths)
-                    test_list.append({
-                    "TestProgramName": file_name,
-                    "Passed": passed_count,
-                    "Failed": failed_count
-                    })
+
+                if patch != "":
+                    syntax_error = super().check_python_syntax(patch)
                 else:
-                    test_list.append({
-                    "TestProgramName": file_name,
-                    "Passed": "null",
-                    "Failed": "null"
-                    })      
-                patch_list.append(syntax_error)
-            bug_list.append(patch_list)
+                    syntax_error = {
+                        "syntax_error": "null",
+                        "error_message": "Empty file, could not extract any code",
+                    }
+
+                if syntax_error["syntax_error"] == False:
+                    failed_count, passed_count = self.run_tests(program_paths)
+                else:
+                    failed_count, passed_count = "null", "null"
+
+                test_run_info = {
+                    "TestProgramName": id,
+                    "Passed": passed_count,
+                    "Failed": failed_count,
+                }
+                test_list.append({**test_run_info, **syntax_error})
+
+                print_progress_bar(
+                    len(bugs) * bug_nr + patch_nr,
+                    len(ids) * len(bugs),
+                )
+
             result_list.append(test_list)
-        
-        return bug_list,result_list
+            bug_nr += 1
+        print("\n")
+        return result_list

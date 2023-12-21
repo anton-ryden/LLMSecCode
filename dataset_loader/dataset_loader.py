@@ -6,7 +6,6 @@ import subprocess
 
 class DatasetLoader(ABC):
     def __init__(self) -> None:
-        self.inst = "Fix the following code and respond only with code."
         self.system_prompt = [
             {
                 "role": "system",
@@ -25,13 +24,12 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> (List[Dict], List[Dict]):
+    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
         pass
 
     @staticmethod
     def format_inst(bug: str):
-        return f"""Fix the following code and respond only with code.
-{bug}"""
+        return f"""Fix the following code and respond only with code. {bug}"""
 
     @staticmethod
     def check_python_syntax(code: str) -> dict:
@@ -63,16 +61,18 @@ class DatasetLoader(ABC):
     @staticmethod
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
         ret_responses = []
-        
+
         # Regular expression to match Python code patterns
-        python_code_pattern = re.compile(r'\b(?:import|def|class|for|while|if|else|elif|try|except|with|finally|raise|return|yield|from|import)\b')
+        python_code_pattern = re.compile(
+            r"\b(?:import|def|class|for|while|if|else|elif|try|except|with|finally|raise|return|yield|from|import)\b"
+        )
 
         for patches in responses:
             patches_code = []
             for patch in patches:
                 # Find the first match of the pattern in the string
                 match = python_code_pattern.search(patch)
-                
+
                 if match:
                     # Extract code starting from the match
                     start_index = match.start()
@@ -84,29 +84,33 @@ class DatasetLoader(ABC):
             ret_responses.append(patches_code)
 
         return ret_responses
-    
+
     @staticmethod
     def format_java_responses(responses: List[List[str]]) -> List[List[str]]:
         ret_responses = []
-        
+
         # Regular expressions to match various Java code patterns
-        start_pattern = re.compile(r'\b(?:package|class|public|private|protected|void)\b')
-        end_pattern = re.compile(r'[{;]')  # Assuming that "{" or ";" indicates the end of a code block
+        start_pattern = re.compile(
+            r"\b(?:package|class|public|private|protected|void)\b"
+        )
+        end_pattern = re.compile(
+            r"[{;]"
+        )  # Assuming that "{" or ";" indicates the end of a code block
 
         for patches in responses:
             patches_code = []
             for patch in patches:
                 # Find the first match of the start pattern in the string
                 start_match = start_pattern.search(patch)
-                
+
                 if start_match:
                     # Extract code starting from the match
                     start_index = start_match.start()
                     code_start = patch[start_index:]
-                    
+
                     # Find the first match of the end pattern after the start
                     end_match = end_pattern.search(code_start)
-                    
+
                     if end_match:
                         # Extract code up to the end match
                         end_index = end_match.start()
@@ -121,39 +125,44 @@ class DatasetLoader(ABC):
             ret_responses.append(patches_code)
 
         return ret_responses
-    
+
     @staticmethod
     def check_java_syntax(file_path: str) -> dict:
-      error_message = ""
-      syntax_error = False
-      line_number = None
+        error_message = ""
+        syntax_error = False
+        line_number = None
 
-      try:
-          if file_path is not None:
-              # Use subprocess to invoke the Java compiler directly on the file
-              result = subprocess.run(["javac", file_path], check=True, stderr=subprocess.PIPE, text=True)
-              syntax_error = False
-          else:
-              syntax_error = True
+        try:
+            if file_path is not None:
+                # Use subprocess to invoke the Java compiler directly on the file
+                result = subprocess.run(
+                    ["javac", file_path], check=True, stderr=subprocess.PIPE, text=True
+                )
+                syntax_error = False
+            else:
+                syntax_error = True
 
-      except subprocess.CalledProcessError as e:
-          syntax_error = True
-          error_message += f"JavaSyntaxError:\n"
+        except subprocess.CalledProcessError as e:
+            syntax_error = True
+            error_message += f"JavaSyntaxError:\n"
 
-          # Check if stderr is not None before decoding
-          if e.stderr is not None:
-              error_message += e.stderr
+            # Check if stderr is not None before decoding
+            if e.stderr is not None:
+                error_message += e.stderr
 
-              # Extract line number from the error message
-              match = re.search(r"error:.*:(\d+):", e.stderr)
-              if match:
-                  line_number = int(match.group(1))
+                # Extract line number from the error message
+                match = re.search(r"error:.*:(\d+):", e.stderr)
+                if match:
+                    line_number = int(match.group(1))
 
-          else:
-              error_message += "No stderr output available."
+            else:
+                error_message += "No stderr output available."
 
-      return {"syntax_error": syntax_error, "error_message": error_message, "line_number": line_number}
-  
+        return {
+            "syntax_error": syntax_error,
+            "error_message": error_message,
+            "line_number": line_number,
+        }
 
     @staticmethod
     def format_patches(
@@ -162,45 +171,37 @@ class DatasetLoader(ABC):
         patches: List[List[str]],
         tot_time: List[float],
         tokens_generated: List[float],
-        test_data_list: List[Dict],
-        test_result_list: List[Dict]
-        
+        test_result_list: List[Dict],
     ) -> List[dict]:
         bugs = []
 
-        for id, prompt, patch, time, tokens, test_data_l,test_result_1 in zip(
-            ids, prompts, patches, tot_time, tokens_generated, test_data_list, test_result_list
+        for id, prompt, patch, time, tokens, test_result_1 in zip(
+            ids, prompts, patches, tot_time, tokens_generated, test_result_list
         ):
             bugs.append(
                 {
                     id: {
                         "prompt": prompt,
-                        "patches": format_patch(patch, test_data_l,test_result_1),
+                        "patches": format_patch(patch, test_result_1),
                         "time_s": time,
                         "tokens_generated": tokens,
-                        "tokens/s": tokens/time,
+                        "tokens/s": tokens / time,
                     }
                 }
             )
 
         return bugs
-    
 
-def format_patch(
-    patches: List[List[str]],
-    test_data_list: List[Dict],
-    test_result_list: List[Dict]
-) -> List[dict]:
+
+def format_patch(patches: List[List[str]], test_result_list: List[Dict]) -> List[dict]:
     patch_list = []
 
-    for patch, test_data, test_result in zip(patches, test_data_list,test_result_list):
+    for patch, test_result in zip(patches, test_result_list):
         patch_list.append(
             {
                 "patch": patch,
-                "test_data": test_data, 
-                "test_result":  test_result,
+                "test_result": test_result,
             }
         )
 
     return patch_list
-    
