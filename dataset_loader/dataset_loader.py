@@ -93,9 +93,7 @@ class DatasetLoader(ABC):
         start_pattern = re.compile(
             r"\b(?:package|class|public|private|protected|void)\b"
         )
-        end_pattern = re.compile(
-            r"[{;]"
-        )  # Assuming that "{" or ";" indicates the end of a code block
+        end_pattern = re.compile(r"\b(?:}\s*//\s*end\sof\s+class\b|}\s*//\s*end\sof\s+method\b)\b")
 
         for patches in responses:
             patches_code = []
@@ -114,13 +112,30 @@ class DatasetLoader(ABC):
                     if end_match:
                         # Extract code up to the end match
                         end_index = end_match.start()
-                        patches_code.append(code_start[:end_index])
+                        java_code_cleaned = code_start[:end_index]
+                        # Check for triple backticks and remove content after them
+                        triple_backticks_index = java_code_cleaned.find("```")
+                        if triple_backticks_index != -1:
+                            java_code_cleaned = java_code_cleaned[:triple_backticks_index]
+                            patches_code.append(java_code_cleaned)
                     else:
+                        java_code_cleaned = code_start
+                        # Check for triple backticks and remove content after them
+                        triple_backticks_index = java_code_cleaned.find("```")
+                        if triple_backticks_index != -1:
+                            java_code_cleaned = java_code_cleaned[:triple_backticks_index]
+                            patches_code.append(java_code_cleaned)
                         # If no end match found, keep the original code
-                        patches_code.append(code_start)
+                        # patches_code.append(code_start)
                 else:
+                    java_code_cleaned = patch
+                        # Check for triple backticks and remove content after them
+                    triple_backticks_index = java_code_cleaned.find("```")
+                    if triple_backticks_index != -1:
+                        java_code_cleaned = java_code_cleaned[:triple_backticks_index]
+                        patches_code.append(java_code_cleaned)
                     # If no start match found, keep the original patch
-                    patches_code.append(patch)
+                    # patches_code.append(patch)
 
             ret_responses.append(patches_code)
 
