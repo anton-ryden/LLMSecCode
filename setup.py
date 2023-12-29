@@ -50,12 +50,16 @@ def prepare_quixbugs() -> None:
 
     print(f"Copying and renaming directory from {original_path} to {new_path}...")
     shutil.copytree(original_path, new_path)
-
     files_to_exclude = [
-        "bitcount.py", "breadth_first_search_test.py", "depth_first_search_test.py",
-        "detect_cycle_test.py", "find_first_in_sorted.py", "minimum_spanning_tree_test.py",
-        "reverse_linked_list_test.py", "shortest_path_lengths_test.py",
-        "shortest_path_length_test.py", "shortest_paths_test.py", "sqrt.py",
+        "node.py",
+        "breadth_first_search_test.py",
+        "depth_first_search_test.py",
+        "detect_cycle_test.py",
+        "minimum_spanning_tree_test.py",
+        "reverse_linked_list_test.py",
+        "shortest_path_lengths_test.py",
+        "shortest_path_length_test.py",
+        "shortest_paths_test.py",
         "topological_ordering_test.py",
     ]
 
