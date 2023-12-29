@@ -51,27 +51,32 @@ class QuixBugsPythonLoader(DatasetLoader):
         return super().format_python_responses(responses)
 
     def run_tests(self, program_path: str) -> (int, int):
-        command = f"pytest {program_path}"
+        try:
+            command = f"pytest {program_path}"
 
-        # Run the pytest command and capture the output
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        if result:
-            # Extract the last line from the output
-            last_line = result.stdout.strip().splitlines()[-1]
-            # Use a regular expression to find the number of failed and passed tests
-            match = re.search(r"(\d+)(?: failed)?(?:,\s*(\d+) passed)?", last_line)
+            # Run the pytest command and capture the output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
+            if result:
+                # Extract the last line from the output
+                last_line = result.stdout.strip().splitlines()[-1]
+                # Use a regular expression to find the number of failed and passed tests
+                match = re.search(r"(\d+)(?: failed)?(?:,\s*(\d+) passed)?", last_line)
 
-            # Extract the number of failed and passed tests if a match is found
-            failed_tests_count = (
-                int(match.group(1)) if match.group(1) is not None else 0
-            )
-            passed_tests_count = (
-                int(match.group(2)) if match.group(2) is not None else 0
-            )
-        else:
-            failed_tests_count = 0
-            passed_tests_count = 0
+                # Extract the number of failed and passed tests if a match is found
+                failed_tests_count = (
+                    int(match.group(1)) if match.group(1) is not None else 0
+                )
+                passed_tests_count = (
+                    int(match.group(2)) if match.group(2) is not None else 0
+                )
+            else:
+                failed_tests_count = 0
+                passed_tests_count = 0
 
+        except subprocess.TimeoutExpired:
+            failed_tests_count = "null"
+            passed_tests_count = "null"
+        
         return failed_tests_count, passed_tests_count
 
     def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
