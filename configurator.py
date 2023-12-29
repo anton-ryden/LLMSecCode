@@ -1,53 +1,45 @@
 import argparse
+import os
 from typing import List
 from dataset_loader.dataset_loader import DatasetLoader
 from dataset_loader.quixbugs_python_loader import QuixBugsPythonLoader
 from dataset_loader.quixbugs_java_loader import QuixBugsJavaLoader
 from dataset_loader.defect4j_loader import Defect4JLoader
 from dataset_loader.human_eval_loader import HumanEvalLoader
+from model_loader.model_loader import ModelLoader
 
 
 class Configurator:
     def __init__(self):
-        self.template_set = "codellama"
-        self.model_id = "TheBloke/CodeLlama-7B-Instruct-GPTQ"
+        # Default configuration values
+        self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
-        self.json_path = "./answers.json"
-        self.patches_per_bug = 2
-        self.max_new_tokens = 3000
+        self.patches_per_bug = 4
+        self.max_new_tokens = 300
         self.temperature = 1.0
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
-        self.chat_template = "{% if messages[0]['role'] == 'system' %}{% set loop_messages = messages[1:] %}{% set system_message = messages[0]['content'] %}{% elif true == true and not '<<SYS>>' in messages[0]['content'] %}{% set loop_messages = messages %}{% else %}{% set loop_messages = messages %}{% set system_message = false %}{% endif %}{% for message in loop_messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if loop.index0 == 0 and system_message != false %}{% set content = '<<SYS>>\\n' + system_message + '\\n<</SYS>>\\n\\n' + message['content'] %}{% else %}{% set content = message['content'] %}{% endif %}{% if message['role'] == 'user' %}{{ bos_token + '[INST] ' + content.strip() + ' [/INST]' }}{% elif message['role'] == 'system' %}{{ '<<SYS>>\\n' + content.strip() + '\\n<</SYS>>\\n\\n' }}{% elif message['role'] == 'assistant' %}{{ ' ' + content.strip() + ' ' + eos_token }}{% endif %}{% endfor %}"
+        self.chat_template = ""
 
+        # Parse command line arguments and check model configurations
         self.parse_args()
-        self.set_chat_template()
+        self.check_model_configs()
 
     def parse_args(self):
+        """Parse command line arguments."""
         parser = argparse.ArgumentParser(description="This is option of arguments.")
         parser.add_argument(
-            "--template_set",
-            choices=["llama", "wizardcode", "codellama"],
-            default=self.template_set,
-            help="Choose the set of templates to use (llama or codewizard).\n Default is %(default)s.",
-        )
-        parser.add_argument(
-            "--model_id",
+            "--model_configs",
             type=str,
-            default=self.model_id,
-            help="Specify the Hugging Face model ID ex: TheBloke/CodeLlama-7B-Instruct-GPTQ.\n Default is %(default)s.",
+            nargs="+",
+            default=[f"{self.model_configs}"],
+            help="Specify one or more model configurations in the format 'model_id:template_name', separated by spaces.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--model_path",
             type=str,
             default=self.model_dir,
             help="Specify where to look and save models to.\n Default is %(default)s.",
-        )
-        parser.add_argument(
-            "--json_path",
-            type=str,
-            default=self.json_path,
-            help="Specify path and name for the JSON file. Default is %(default)s.",
         )
         parser.add_argument(
             "--patches_per_bug",
@@ -86,19 +78,17 @@ class Configurator:
         for attr, value in vars(args).items():
             setattr(self, attr, value)
 
-    def set_chat_template(self) -> str:
-        template_llama = "{% if messages[0]['role'] == 'system' %}{% set loop_messages = messages[1:] %}{% set system_message = messages[0]['content'] %}{% elif true == true and not '<<SYS>>' in messages[0]['content'] %}{% set loop_messages = messages %}{% else %}{% set loop_messages = messages %}{% set system_message = false %}{% endif %}{% for message in loop_messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if loop.index0 == 0 and system_message != false %}{% set content = '<<SYS>>\\n' + system_message + '\\n<</SYS>>\\n\\n' + message['content'] %}{% else %}{% set content = message['content'] %}{% endif %}{% if message['role'] == 'user' %}{{ bos_token + '[INST] ' + content.strip() + ' [/INST]' }}{% elif message['role'] == 'system' %}{{ '<<SYS>>\\n' + content.strip() + '\\n<</SYS>>\\n\\n' }}{% elif message['role'] == 'assistant' %}{{ ' ' + content.strip() + ' ' + eos_token }}{% endif %}{% endfor %}"
-        template_codewizard = "{% if messages[0]['role'] == 'system' %}{% set loop_messages = messages[1:] %}{% set system_message = messages[0]['content'] %}{% else %}{% set loop_messages = messages %}{% set system_message = false %}{% endif %}{% for message in loop_messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if messages[0]['role'] == 'system' %}{% set loop_messages = messages[1:] %}{{ messages[0]['content'].strip() }}{% elif message['role'] == 'user' %}{{ bos_token + message['content'].strip() }}{% elif message['role'] == 'assistant' %}{{ ' '  + message['content'].strip() + ' ' + eos_token }}{% endif %}{% endfor %}"
-        template_set = self.template_set
+    def check_model_configs(self):
+        """Check if specified template sets exist."""
+        files = os.listdir("./prompt_templates")
 
-        if template_set == "llama" or template_set == "codellama":
-            self.chat_template = template_llama
-        elif template_set == "wizardcode":
-            self.chat_template = template_codewizard
-        else:
-            raise ValueError(f"Invalid template set: {template_set}")
+        for model_config in self.model_configs:
+            _, template_set = model_config.split(":")
+            if template_set not in files:
+                raise ValueError(f"Invalid template set: {template_set}")
 
-    def get_dataset_loader(self) -> List[DatasetLoader]:
+    def get_dataset_loaders(self) -> List[DatasetLoader]:
+        """Get dataset loaders based on specified datasets."""
         dataset_loaders = []
 
         for dataset in self.datasets:
@@ -113,7 +103,17 @@ class Configurator:
             else:
                 raise ValueError(f"Invalid dataset: {dataset}")
 
-        if len(dataset_loaders) == 0:
+        if not dataset_loaders:
             raise ValueError("No datasets specified")
 
         return dataset_loaders
+
+    def get_model_loaders(self) -> List[ModelLoader]:
+        """Get model loaders based on specified model configurations."""
+        model_loaders = []
+
+        for model_config in self.model_configs:
+            model_id, template_name = model_config.split(":")
+            model_loaders.append(ModelLoader(self, model_id, template_name))
+
+        return model_loaders

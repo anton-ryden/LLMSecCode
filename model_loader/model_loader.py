@@ -1,8 +1,6 @@
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    PreTrainedModel,
-    PreTrainedTokenizer,
 )
 from transformers.generation import GenerationConfig
 from typing import List, Tuple
@@ -11,26 +9,25 @@ import logging
 import time
 from utils import print_progress_bar
 from dataset_loader.dataset_loader import DatasetLoader
-from configurator import Configurator
 
 
 class ModelLoader:
-    def __init__(self, conf: Configurator) -> None:
-        self.model_id = conf.model_id
+    def __init__(self, conf, model_id: str, template_name: str) -> None:
+        self.model_id = model_id
+        self.template_name = template_name
+
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
         self.max_new_tokens = conf.max_new_tokens
         self.top_p = conf.top_p
         self.patch_size = conf.patches_per_bug
-        self.chat_template = conf.chat_template
         self.batch_size = 1  # Initialize with a conservative batch size
+        self.chat_template = ""
 
         self.device = "cuda"
-        self.name = conf.model_id.split("/")[1]
-        self.model, self.tokenizer = self.load_model_tokenizer()
-        self.model.eval()
+        self.name = model_id.split("/")[1]
 
-    def load_model_tokenizer(self) -> Tuple[PreTrainedModel, PreTrainedTokenizer]:
+    def load_model_tokenizer(self):
         print("Loading of " + self.name + " model starting...")
         # Load model and tokenizer on GPU
         model = AutoModelForCausalLM.from_pretrained(
@@ -47,10 +44,21 @@ class ModelLoader:
             cache_dir=self.cache_dir,
         )
 
-        tokenizer.chat_template = self.chat_template
-
         print("Loading of " + self.name + " model complete.\n")
-        return model, tokenizer
+        self.model, self.tokenizer = model, tokenizer
+        self.set_chat_template(self.template_name)
+    
+    def unload_model_tokenizer(self):
+        del self.model
+        del self.tokenizer
+        torch.cuda.empty_cache()
+
+    def set_chat_template(self, template_name: str) -> None:
+        content = ""
+        with open("./prompt_templates/" + template_name, 'r') as file:
+            for line in file:
+                content += line.rstrip().lstrip()
+        self.tokenizer.chat_template = content
 
     def generate_answers(
         self,
@@ -70,6 +78,7 @@ class ModelLoader:
             ret_responses.append(patches)
             ret_tot_time.append(tot_time)
 
+        print("\n")
         return ret_responses, ret_tot_time
 
     def format_tabs(self, responses: List[List[str]]) -> List[List[str]]:

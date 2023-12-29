@@ -181,6 +181,7 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_patches(
+        responses: List[List[str]],
         ids: List[str],
         prompts: List[List[dict]],
         patches: List[List[str]],
@@ -190,12 +191,19 @@ class DatasetLoader(ABC):
     ) -> List[dict]:
         bugs = []
 
-        for id, prompt, patch, time, tokens, test_result_1 in zip(
-            ids, prompts, patches, tot_time, tokens_generated, test_result_list
+        for response, id, prompt, patch, time, tokens, test_result_1 in zip(
+            responses,
+            ids,
+            prompts,
+            patches,
+            tot_time,
+            tokens_generated,
+            test_result_list,
         ):
             bugs.append(
                 {
                     id: {
+                        "response": response,
                         "prompt": prompt,
                         "patches": format_patch(patch, test_result_1),
                         "time_s": time,

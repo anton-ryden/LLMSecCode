@@ -8,7 +8,7 @@ from utils import write_dict_to_json
 def evaluate_models_on_datasets(
     model_loaders: List[ModelLoader],
     dataset_loaders: List[DatasetLoader],
-) -> List[dict]:
+):
     """
     Evaluate a list of model loaders on a list of dataset loaders.
 
@@ -16,17 +16,23 @@ def evaluate_models_on_datasets(
     :param dataset_loaders: List of DatasetLoader instances.
     :return: List of dictionaries containing evaluation results for each model on each dataset.
     """
-    # List to store the final evaluation results
     evaluation_results = []
 
     # Iterate over each model loader
     for model_loader in model_loaders:
+        model_loader.load_model_tokenizer()
         model_result = evaluate_single_model_on_datasets(model_loader, dataset_loaders)
         # Append results for the current model
         evaluation_results.append({model_loader.name: model_result})
 
-    # Return the final evaluation results
-    return evaluation_results
+        # Write model results to json file
+        write_dict_to_json(
+            {model_loader.name: model_result},
+            "./results/" + model_loader.name + ".json",
+        )
+
+        # Unload model and tokenizer from memory
+        model_loader.unload_model_tokenizer()
 
 
 def evaluate_single_model_on_datasets(
@@ -40,7 +46,6 @@ def evaluate_single_model_on_datasets(
     :param dataset_loaders: List of DatasetLoader instances.
     :return: List of dictionaries containing evaluation results for the model on each dataset.
     """
-    # List to store results for each dataset
     model_evaluation_results = []
 
     # Iterate over each dataset loader
@@ -86,7 +91,7 @@ def evaluate_single_model_on_dataset(
 
     # Format patches
     formatted_patches = dataset_loader.format_patches(
-        ids, prompts, only_code, tot_time, tokens_generated, test_result
+        no_instruction, ids, prompts, only_code, tot_time, tokens_generated, test_result
     )
 
     return formatted_patches
@@ -94,12 +99,9 @@ def evaluate_single_model_on_dataset(
 
 if __name__ == "__main__":
     # Initialize configurator and get loaders
-    conf = Configurator()
-    model_loader = ModelLoader(conf)
-    dataset_loaders = conf.get_dataset_loader()
+    configurator = Configurator()
+    model_loaders = configurator.get_model_loaders()
+    dataset_loaders = configurator.get_dataset_loaders()
 
     # Generate answers and evaluate
-    json_data = evaluate_models_on_datasets([model_loader], dataset_loaders)
-
-    # Write JSON to a file
-    write_dict_to_json(json_data, conf.json_path)
+    evaluate_models_on_datasets(model_loaders, dataset_loaders)
