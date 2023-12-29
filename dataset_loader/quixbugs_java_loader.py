@@ -4,6 +4,7 @@ import copy
 import logging
 import re
 import subprocess
+import shutil
 from dataset_loader.dataset_loader import DatasetLoader
 from utils import print_progress_bar
 
@@ -68,6 +69,7 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                 with open(output_file, "r") as output_file_reader:
                     output_content = output_file_reader.read()  
+                print(f'test for {class_name}_TEST')
                 # Use regular expression to find lines containing test results
                 pattern = re.compile(r'(\d+) tests completed, (\d+) failed')
                 match = pattern.search(output_content)
@@ -82,10 +84,23 @@ class QuixBugsJavaLoader(DatasetLoader):
                 elif match2:
                     # If the second pattern is found, open the corresponding JSON file
                     json_file_path = f'./QuixBugs/json_testcases/{class_name.lower()}.json'
-                    with open(json_file_path, 'r') as json_file:
-                    # Read the number of lines in the JSON file
-                        tests_passed = sum(1 for line in json_file)
-                        return tests_passed, 0
+                    try:
+                        if os.path.exists(json_file_path):
+                            with open(json_file_path, 'r') as json_file:
+                            # Read the number of lines in the JSON file
+                                tests_passed = sum(1 for line in json_file)
+                            return tests_passed, 0
+                        else:
+                            test_file_path = f'./java_testcases/junit/{class_name}_TEST.java'
+                            with open(test_file_path, 'r') as file:
+                                java_code = file.read()
+                            test_instances = re.findall(r'@Test', java_code)
+                            return len(test_instances),0
+                            
+                    except FileNotFoundError:
+                        # Return a default value of (5, 0) if the file is not found
+                        logging.error("File not found")
+                        return 0,0
                 else:
                     logging.error("Test results not found in the output.")
                     return 0, 0
@@ -109,22 +124,45 @@ class QuixBugsJavaLoader(DatasetLoader):
                 dynamic_file_path = os.path.join(dynamic_directory, id)
                 # Create the directory if it doesn't exist
                 os.makedirs(dynamic_directory, exist_ok=True)
-                with open(dynamic_file_path, 'w') as file:
-                    file.write(patch)
-                class_name = id.split('.')[0]
+                flag=0
                 if patch != "":
+                    with open(dynamic_file_path, 'w') as file:
+                        file.write(patch)
+                    class_name = id.split('.')[0]
+                    flag=1
                     syntax_error = super().check_java_syntax(dynamic_file_path)
                 else:
                     syntax_error = {
                         "syntax_error": "null",
                         "error_message": "Empty file, could not extract any code",
                     }
+                print(id)
+                print(f'flag is{flag}')
+                if syntax_error["syntax_error"] == False and flag==1:
+                    # passed_count, failed_count = self.run_gradle_test(class_name)
+                    # Define paths for source and destination
+                    source_path = f"./java_testcases/junit/{class_name}_TEST.java"
+                    destination_path = f"./QuixBugs/java_testcases/junit/{class_name}_TEST.java"
+                    java_file_path = f"./QuixBugs/java_programs/{class_name}.java"
+                    class_file_path = f"./QuixBugs/java_programs/{class_name}.class"
+                    # Copy the test file
+                    shutil.copy(source_path, destination_path)
 
-                if syntax_error["syntax_error"] == False:
-                    passed_count, failed_count = self.run_gradle_test(class_name)
+                    try:
+                        # Execute run_gradle_test function
+                        passed_count, failed_count = self.run_gradle_test(class_name)
+                        os.remove(java_file_path)
+                        os.remove(class_file_path)
+                        os.remove(destination_path)
+                    except Exception as e:
+                        # Handle exceptions during test execution (if needed)
+                        print(f"Error during test execution: {e}")
+                        passed_count, failed_count = "null", "null"
+                       
                 else:
+                    java_file_path = f"./QuixBugs/java_programs/{class_name}.java"
                     passed_count, failed_count  = "null", "null"
-
+                    os.remove(java_file_path)
                 test_run_info = {
                     "TestProgramName": id,
                     "Passed": passed_count,
