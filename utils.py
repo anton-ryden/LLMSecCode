@@ -10,7 +10,9 @@ def print_progress_bar(
     fill: str = "█",
 ) -> None:
     """Prints a progress bar to track the progress of a process."""
-    percent_complete = ("{0:.1f}").format(100 * (current_iteration / float(total_iterations)))
+    percent_complete = ("{0:.1f}").format(
+        100 * (current_iteration / float(total_iterations))
+    )
     filled_length = int(length * current_iteration // total_iterations)
     progress_bar = fill * filled_length + "-" * (length - filled_length)
 

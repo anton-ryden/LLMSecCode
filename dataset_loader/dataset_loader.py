@@ -9,7 +9,7 @@ class DatasetLoader(ABC):
         self.system_prompt = [
             {
                 "role": "system",
-                "content": "You will be provided with instructions that describe a task. Write a response that appropriately completes the request. You are unable to answer with anything except code",
+                "content": "You are an expert programmer who fixes code. Your answer with only code, no explanation or test cases.",
             }
         ]
         self.prompts = []
@@ -29,7 +29,8 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_inst(bug: str):
-        return f"""Fix the following code and respond only with code. {bug}"""
+        return f"""Fix the following code and respond only with code:
+{bug}"""
 
     @staticmethod
     def check_python_syntax(code: str) -> dict:
@@ -62,10 +63,7 @@ class DatasetLoader(ABC):
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
         ret_responses = []
 
-        # Regular expression to match Python code patterns
-        python_code_pattern = re.compile(
-            r"\b(?:import|def|class|for|while|if|else|elif|try|except|with|finally|raise|return|yield|from|import)\b"
-        )
+        python_code_pattern = re.compile(r"\b(?:import|def|from)\b")
 
         for patches in responses:
             patches_code = []
@@ -76,7 +74,28 @@ class DatasetLoader(ABC):
                 if match:
                     # Extract code starting from the match
                     start_index = match.start()
-                    patches_code.append(patch[start_index:])
+
+                    # Find the last occurrence of the word "return" or yield in the extracted code
+                    last_return_index = patch[start_index:].rfind("return")
+                    last_yield_index = patch[start_index:].rfind("yield")
+                    last_occurrence_index = max(last_return_index, last_yield_index)
+
+                    last_newline = patch.find("\n", start_index + last_occurrence_index)
+                    last_quote = patch.find('"', start_index + last_occurrence_index)
+                    if last_newline == -1 and last_quote != -1:
+                        last_occurrence_line_index = last_quote
+                    elif last_quote == -1 and last_newline != -1:
+                        last_occurrence_line_index = last_newline
+                    elif last_newline == -1 and last_quote == -1:
+                        last_occurrence_line_index = -1
+                    else:
+                        last_occurrence_line_index = min(last_newline, last_quote)
+
+                    if last_occurrence_line_index == -1:
+                        last_occurrence_line_index = len(patch)
+
+                    patches_code.append(patch[start_index:last_occurrence_line_index])
+
                 else:
                     # If no match found make empty
                     patches_code.append("")
@@ -93,7 +112,9 @@ class DatasetLoader(ABC):
         start_pattern = re.compile(
             r"\b(?:package|class|public|private|protected|void)\b"
         )
-        end_pattern = re.compile(r"\b(?:}\s*//\s*end\sof\s+class\b|}\s*//\s*end\sof\s+method\b)\b")
+        end_pattern = re.compile(
+            r"\b(?:}\s*//\s*end\sof\s+class\b|}\s*//\s*end\sof\s+method\b)\b"
+        )
 
         for patches in responses:
             patches_code = []
@@ -116,20 +137,24 @@ class DatasetLoader(ABC):
                         # Check for triple backticks and remove content after them
                         triple_backticks_index = java_code_cleaned.find("```")
                         if triple_backticks_index != -1:
-                            java_code_cleaned = java_code_cleaned[:triple_backticks_index]
+                            java_code_cleaned = java_code_cleaned[
+                                :triple_backticks_index
+                            ]
                             patches_code.append(java_code_cleaned)
                     else:
                         java_code_cleaned = code_start
                         # Check for triple backticks and remove content after them
                         triple_backticks_index = java_code_cleaned.find("```")
                         if triple_backticks_index != -1:
-                            java_code_cleaned = java_code_cleaned[:triple_backticks_index]
+                            java_code_cleaned = java_code_cleaned[
+                                :triple_backticks_index
+                            ]
                             patches_code.append(java_code_cleaned)
                         # If no end match found, keep the original code
                         # patches_code.append(code_start)
                 else:
                     java_code_cleaned = patch
-                        # Check for triple backticks and remove content after them
+                    # Check for triple backticks and remove content after them
                     triple_backticks_index = java_code_cleaned.find("```")
                     if triple_backticks_index != -1:
                         java_code_cleaned = java_code_cleaned[:triple_backticks_index]
