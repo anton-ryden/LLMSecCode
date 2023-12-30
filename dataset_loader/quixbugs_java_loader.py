@@ -127,11 +127,12 @@ class QuixBugsJavaLoader(DatasetLoader):
                     dynamic_file_path = os.path.join(dynamic_directory, id)
                     # Create the directory if it doesn't exist
                     os.makedirs(dynamic_directory, exist_ok=True)
+                    
+                    with open(dynamic_file_path, 'w') as file:
+                        file.write(patch)
+                    class_name = id.split('.')[0]
                     flag=0
                     if patch != "":
-                        with open(dynamic_file_path, 'w') as file:
-                            file.write(patch)
-                        class_name = id.split('.')[0]
                         flag=1
                         syntax_error = super().check_java_syntax(dynamic_file_path)
                     else:
@@ -139,8 +140,7 @@ class QuixBugsJavaLoader(DatasetLoader):
                             "syntax_error": "null",
                             "error_message": "Empty file, could not extract any code",
                         }
-                    print(id)
-                    print(f'flag is{flag}')
+                    
                     if syntax_error["syntax_error"] == False and flag==1:
                         # passed_count, failed_count = self.run_gradle_test(class_name)
                         # Define paths for source and destination

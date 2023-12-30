@@ -42,7 +42,7 @@ def clone_repository(repo_url: str, dir_name: str) -> None:
     os.system(f"git clone {repo_url} {destination_path}")
 
 
-def prepare_quixbugs() -> None:
+def prepare_quixbugs_python() -> None:
     """Prepare QuixBugs directory by copying, renaming, and excluding specific files."""
     original_path = os.path.join(SCRIPT_DIR, "QuixBugs/python_programs")
     new_folder_name = "QuixBugs/python_programs_bug"
@@ -78,6 +78,49 @@ def prepare_quixbugs() -> None:
     except Exception as e:
         raise Exception(f"Error deleting .git directory in QuixBugs: {e}")
 
+def prepare_quixbugs_java() -> None:
+    """Prepare QuixBugs directory by copying, renaming, and excluding specific files."""
+    original_path = os.path.join(SCRIPT_DIR, "QuixBugs/java_programs")
+    new_folder_name = "java_programs_bug"
+    new_path = os.path.join(SCRIPT_DIR, new_folder_name)
+    exclude_files = ["Node.java", "WeightedEdge.java", "Node.class", "WeightedEdge.class"]
+    original_path_test = os.path.join(SCRIPT_DIR, "QuixBugs/java_testcases/junit/")
+    new_test_folder_name = "java_testcases/junit/"
+    new_path_test = os.path.join(SCRIPT_DIR, new_test_folder_name)
+    try:
+        # Create the destination directory if it doesn't exist
+        os.makedirs(new_path, exist_ok=True)
+
+        # Move .java files to the destination directory
+        for filename in os.listdir(original_path):
+            source_path = os.path.join(original_path, filename)
+            destination_path = os.path.join(new_path, filename)
+
+            # Check if the file is a .java file and not in the exclude list
+            if filename.endswith(".java") and filename not in exclude_files:
+                shutil.move(source_path, destination_path)
+
+        # Remove .class files from the source directory
+        for filename in os.listdir(original_path):
+            file_path = os.path.join(original_path, filename)
+
+            # Check if the file is a .class file and not in the exclude list
+            if filename.endswith(".class") and filename not in exclude_files:
+                os.remove(file_path)
+        
+        # Create the destination directory if it doesn't exist
+        os.makedirs(new_path_test, exist_ok=True)
+
+        # Move all files and folders from source to destination
+        for item in os.listdir(original_path_test):
+            if item.endswith("TEST.java"):
+                source_path = os.path.join(original_path_test, item)
+                destination_path = os.path.join(new_path_test, item)
+                shutil.move(source_path, destination_path)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     # Repository URL
@@ -87,6 +130,6 @@ if __name__ == "__main__":
     clone_repository(quixbugs_url, "QuixBugs")
 
     # Make changes to QuixBugs Folder
-    prepare_quixbugs()
-
+    prepare_quixbugs_python()
+    prepare_quixbugs_java()
     print("Setup completed successfully.")

@@ -49,7 +49,7 @@ class Configurator:
         )
         parser.add_argument(
             "--max_new_tokens",
-            type=int,
+            type=float,
             default=self.max_new_tokens,
             help="The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.\n Default is %(default)s.",
         )
