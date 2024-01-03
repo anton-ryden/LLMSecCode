@@ -4,3 +4,7 @@ __pycache__/
 answers.json
 launch.json
 QuixBugs/
+java_programs_bug/
+java_testcases/
+results/
+output.txt
