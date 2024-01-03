@@ -15,8 +15,8 @@ class Configurator:
         self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
         self.patches_per_bug = 4
-        self.max_new_tokens = 300
-        self.temperature = 1.0
+        self.max_new_tokens = 600
+        self.temperature = 0.8
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
         self.chat_template = ""
@@ -49,13 +49,13 @@ class Configurator:
         )
         parser.add_argument(
             "--max_new_tokens",
-            type=float,
+            type=int,
             default=self.max_new_tokens,
             help="The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--temperature",
-            type=int,
+            type=float,
             default=self.temperature,
             help="The temperature used in generation, higher value -> more diverse answers.\n Default is %(default)s.",
         )
