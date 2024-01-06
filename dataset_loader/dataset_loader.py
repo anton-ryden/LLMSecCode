@@ -60,44 +60,41 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
+        def extract_code_from_patch(patch: str) -> str:
+                patch = patch.replace("\t", "    ")
+                patch = patch.replace("\\n", "\n")
+                # Define the regex pattern
+                pattern = re.compile(r'\b(?:import|from|def)\b|\w*(?:import|from|def)\w*')
+
+                # Find all matches in the patched string
+                matches = pattern.finditer(patch)
+
+                # Extract the start index of each match and store them in a list
+                function_indices = [match.start() for match in matches]
+                function_indices.sort()
+
+                for i, function_index in enumerate(function_indices):
+                    temp = patch[function_index:]
+
+                    lines = temp.split("\n")
+                    line_end_index = 0
+                    for i, line in enumerate(lines[1:]):
+                        if len(line) > 0 and line[0] != " ":
+
+                            for j in range(i+1):
+                                line_end_index += len(lines[j])+1
+
+                            return patch[function_index:function_index+line_end_index]                        
+
+                return ""
+        
+
         ret_responses = []
-
-        python_code_pattern = re.compile(r"\b(?:import|def|from)\b")
-
         for patches in responses:
             patches_code = []
             for patch in patches:
-                # Find the first match of the pattern in the string
-                match = python_code_pattern.search(patch)
-
-                if match:
-                    # Extract code starting from the match
-                    start_index = match.start()
-
-                    # Find the last occurrence of the word "return" or yield in the extracted code
-                    last_return_index = patch[start_index:].rfind("return")
-                    last_yield_index = patch[start_index:].rfind("yield")
-                    last_occurrence_index = max(last_return_index, last_yield_index)
-
-                    last_newline = patch.find("\n", start_index + last_occurrence_index)
-                    last_quote = patch.find('"', start_index + last_occurrence_index)
-                    if last_newline == -1 and last_quote != -1:
-                        last_occurrence_line_index = last_quote
-                    elif last_quote == -1 and last_newline != -1:
-                        last_occurrence_line_index = last_newline
-                    elif last_newline == -1 and last_quote == -1:
-                        last_occurrence_line_index = -1
-                    else:
-                        last_occurrence_line_index = min(last_newline, last_quote)
-
-                    if last_occurrence_line_index == -1:
-                        last_occurrence_line_index = len(patch)
-
-                    patches_code.append(patch[start_index:last_occurrence_line_index])
-
-                else:
-                    # If no match found make empty
-                    patches_code.append("")
+                code = extract_code_from_patch(patch)
+                patches_code.append(code)
 
             ret_responses.append(patches_code)
 
