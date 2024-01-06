@@ -1,5 +1,6 @@
 import json
 import shutil
+import os
 
 def print_progress_bar(
     current_iteration: int,
@@ -33,5 +34,9 @@ def print_progress_bar(
 
 def write_dict_to_json(data: dict, json_path: str) -> None:
     """Writes a dictionary to a JSON file with indentation."""
+    # Ensure the directory structure exists
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+
+    # Write the dictionary to the JSON file
     with open(json_path, "w") as json_file:
         json.dump(data, json_file, indent=6)
