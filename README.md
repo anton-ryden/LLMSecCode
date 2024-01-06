@@ -68,3 +68,91 @@ If you are unsure of what to provide the model with and how it affects the progr
 ```bash
 python main.py -h
 ```
+
+## Examples of supported models:
+| Supported coversation type                | Model name                                    | Prompt template |
+| ------------------------------------------| ----------------------------------------------| ----------------|
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama           |
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama           |
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama           |
+| Code Completion/Code Insertion            | TheBlokeCodeLlama-7B-GPTQ                     | llama           |
+| Code Completion/Code Insertion            | TheBlokeCodeLlama-13B-GPTQ                    | llama           |
+| Code Completion/Code Insertion            | TheBlokeCodeLlama-34B-GPTQ                    | llama           |
+| Instruction                               | TheBloke/Llama-2-7B-GPTQ                      | llama           |
+| Instruction                               | TheBloke/Llama-2-13B-GPTQ                     | llama           |
+| Instruction                               | TheBloke/Llama-2-70B-GPTQ                     | llama           |
+| Instruction                               | TheBloke/Llama-2-7B-Chat-GPTQ                 | llama           |
+| Instruction                               | TheBloke/Llama-2-13B-chat-GPTQ                | llama           |
+| Instruction                               | TheBloke/Llama-2-70B-chat-GPTQ                | llama           |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3b-instruct-GPTQ    | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7b-instruct-GPTQ    | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33b-instruct-GPTQ     | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3b-base-GPTQ        | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7b-base-GPTQ        | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33b-base-GPTQ         | deepseek_coder  |
+| ***Instruction***                         | ***TheBloke/deepseek-llm-7b-base-GPTQ***      |***deepseek_llm***|
+| ***Instruction***                         | ***TheBloke/deepseek-llm-67b-base-GPTQ***     | ***deepseek_llm***| 
+
+***NOTE: Models in bold do not support system prompts***
+## Code completion
+Code completion tasks is when you provide specific instructions to guide the model in generating or completing code.
+Example:
+```python
+def quicksort(arr):
+```
+Expected answer from LLM:
+```python
+def quicksort(arr):
+    if not arr:
+        return []
+
+    pivot = arr[0]
+    lesser = quicksort([x for x in arr[1:] if x < pivot])
+    greater = quicksort([x for x in arr[1:] if x >= pivot])
+    return lesser + [pivot] + greater
+```
+## Instruction
+Tailored for instruction-based tasks in coding. It allows you to guide the model in generating code by providing explicit instructions for the desired output.
+```python
+You are an expert programmer who fixes code. Please fix this buggy code:
+def quicksort(arr):
+    if not arr:
+        return []
+
+    pivot = arr[0]
+    lesser = quicksort([x for x in arr[1:] if x < pivot])
+    greater = quicksort([x for x in arr[1:] if x > pivot])
+    return lesser + [pivot] + greater
+```
+Expected answer from LLM:
+```python
+def quicksort(arr):
+    if not arr:
+        return []
+
+    pivot = arr[0]
+    lesser = quicksort([x for x in arr[1:] if x < pivot])
+    greater = quicksort([x for x in arr[1:] if x > pivot])
+    return lesser + [pivot] + greater
+```
+## Code insertion
+This coversation type is designed for inserting code snippets into a given context. It can be instructed to add specific code elements or functionalities.
+High level example:
+```python
+def quicksort(arr):
+    <INSERT>
+    return lesser + [pivot] + greater
+```
+Expected answer from LLM:
+```python
+def quicksort(arr):
+    if not arr:
+        return []
+
+    pivot = arr[0]
+    lesser = quicksort([x for x in arr[1:] if x < pivot])
+    greater = quicksort([x for x in arr[1:] if x > pivot])
+    return lesser + [pivot] + greater
+```
+
+## How to run a model not in the supported matrix
