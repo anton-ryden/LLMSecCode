@@ -35,7 +35,7 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                         prompt = copy.deepcopy(system_prompt)
                         prompt.append(
-                            {"role": "user", "content": self.format_inst(file_data)}
+                            {"role": "user", "content": self.format_inst(file_data, "java")}
                         )
                         prompts.append({file_name: prompt})
                 else:
@@ -43,7 +43,7 @@ class QuixBugsJavaLoader(DatasetLoader):
             except Exception as e:
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
-        print(self.name + " prompts loaded.}\n")
+        print(self.name + " prompts loaded\n")
         self.prompts = prompts
 
     def format_code_responses(self, response: List[str]) -> List[str]:

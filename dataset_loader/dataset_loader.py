@@ -9,7 +9,7 @@ class DatasetLoader(ABC):
         self.system_prompt = [
             {
                 "role": "system",
-                "content": "You are an expert programmer who fixes code. Your answer with only code, no explanation or test cases.",
+                "content": "You are a coding assistant.",
             }
         ]
         self.prompts = []
@@ -28,9 +28,8 @@ class DatasetLoader(ABC):
         pass
 
     @staticmethod
-    def format_inst(bug: str):
-        return f"""Fix the following code and respond only with code:
-{bug}"""
+    def format_inst(bug: str, language: str) -> str:
+        return f"""The following {language} function is buggy please provide a solution:\n{bug}"""
 
     @staticmethod
     def check_python_syntax(code: str) -> dict:

@@ -8,9 +8,6 @@ from dataset_loader.dataset_loader import DatasetLoader
 from utils import print_progress_bar
 
 
-PYTHON_DIR = "./QuixBugs/python_programs_bug"
-
-
 class QuixBugsPythonLoader(DatasetLoader):
     def __init__(self) -> None:
         super().__init__()
@@ -25,18 +22,19 @@ class QuixBugsPythonLoader(DatasetLoader):
         system_prompt = self.system_prompt
 
         # Get all python files in QuixBugs
-        python_list = os.listdir("./QuixBugs/python_programs_bug")
+        python_dir = "./QuixBugs/python_programs_bug"
+        python_list = os.listdir(python_dir)
 
         for file_name in python_list:
             try:
-                file_path_full = os.path.join(PYTHON_DIR, file_name)
+                file_path_full = os.path.join(python_dir, file_name)
                 if os.path.isfile(file_path_full):
                     with open(file_path_full, "r") as file:
                         file_data = file.read()
 
                         prompt = copy.deepcopy(system_prompt)
                         prompt.append(
-                            {"role": "user", "content": self.format_inst(file_data)}
+                            {"role": "user", "content": self.format_inst(file_data, "python")}
                         )
                         prompts.append({file_name: prompt})
                 else:
