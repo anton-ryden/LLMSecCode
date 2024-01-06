@@ -20,6 +20,7 @@ class Configurator:
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
         self.chat_template = ""
+        self.results_dir = "default"
 
         # Parse command line arguments and check model configurations
         self.parse_args()
@@ -72,6 +73,13 @@ class Configurator:
             choices=["quixbugs-python", "quixbugs-java", "defect4j", "human_eval"],
             help="Choose one or more datasets from 'quixbugs-python', 'quixbugs-java', 'defect4j', and 'human_eval'. Default is 'quixbugs defect4j human_eval'.",
         )
+        parser.add_argument(
+            "--results_dir",
+            type=str,
+            default=self.results_dir,
+            help="Specify name of folder to save results to.\n Default is %(default)s.",
+        )
+
         args = parser.parse_args()
 
         # Set attributes based on parsed arguments

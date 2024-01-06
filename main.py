@@ -8,12 +8,14 @@ from utils import write_dict_to_json
 def evaluate_models_on_datasets(
     model_loaders: List[ModelLoader],
     dataset_loaders: List[DatasetLoader],
+    results_dir: str,
 ):
     """
     Evaluate a list of model loaders on a list of dataset loaders.
 
     :param model_loaders: List of ModelLoader instances.
     :param dataset_loaders: List of DatasetLoader instances.
+    :param results_dir: Str name of folder to save results to.
     :return: List of dictionaries containing evaluation results for each model on each dataset.
     """
     evaluation_results = []
@@ -28,7 +30,7 @@ def evaluate_models_on_datasets(
         # Write model results to json file
         write_dict_to_json(
             {model_loader.name: model_result},
-            "./results/" + model_loader.name + ".json",
+            "./results/" + results_dir + "/" + model_loader.name + ".json",
         )
 
         # Unload model and tokenizer from memory
@@ -104,4 +106,4 @@ if __name__ == "__main__":
     dataset_loaders = configurator.get_dataset_loaders()
 
     # Generate answers and evaluate
-    evaluate_models_on_datasets(model_loaders, dataset_loaders)
+    evaluate_models_on_datasets(model_loaders, dataset_loaders, configurator.results_dir)
