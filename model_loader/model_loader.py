@@ -42,23 +42,24 @@ class ModelLoader:
             use_fast=True,
             device_map=self.device,
             cache_dir=self.cache_dir,
+            chat_template=self.set_chat_template(self.template_name),
         )
 
         print("Loading of " + self.name + " model complete.\n")
         self.model, self.tokenizer = model, tokenizer
-        self.set_chat_template(self.template_name)
+        
     
     def unload_model_tokenizer(self):
         del self.model
         del self.tokenizer
         torch.cuda.empty_cache()
 
-    def set_chat_template(self, template_name: str) -> None:
+    def set_chat_template(self, template_name: str) -> str:
         content = ""
         with open("./prompt_templates/" + template_name, 'r') as file:
             for line in file:
                 content += line.rstrip().lstrip()
-        self.tokenizer.chat_template = content
+        return content
 
     def generate_answers(
         self,
