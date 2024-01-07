@@ -18,7 +18,7 @@ class ModelLoader:
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
-        self.max_new_tokens = conf.max_new_tokens
+        self.max_length = conf.max_length
         self.top_p = conf.top_p
         self.patch_size = conf.patches_per_bug
         self.batch_size = 1  # Initialize with a conservative batch size
@@ -180,7 +180,7 @@ class ModelLoader:
                         input,
                         use_cache=True,
                         generation_config=gen_cfg,
-                        max_new_tokens=self.max_new_tokens,
+                        max_length=self.max_length,
                         temperature=self.temperature,
                         top_p=self.top_p,
                         do_sample=True,
