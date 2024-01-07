@@ -63,6 +63,7 @@ class DatasetLoader(ABC):
         def extract_code_from_patch(patch: str) -> str:
                 patch = patch.replace("\t", "    ")
                 patch = patch.replace("\\n", "\n")
+                patch = patch.strip()
                 # Define the regex pattern
                 pattern = re.compile(r'\b(?:import|from|def)\b|\w*(?:import|from|def)\w*')
 
@@ -79,12 +80,16 @@ class DatasetLoader(ABC):
                     lines = temp.split("\n")
                     line_end_index = 0
                     for i, line in enumerate(lines[1:]):
+                        pattern2 = re.compile(r'\b(import|from|def)\b')
+                        if pattern2.search(line):
+                            continue
                         if len(line) > 0 and line[0] != " ":
-
                             for j in range(i+1):
                                 line_end_index += len(lines[j])+1
 
-                            return patch[function_index:function_index+line_end_index]                        
+                            return patch[function_index:function_index+line_end_index]   
+                        
+                    return patch[function_index:]                     
 
                 return ""
         
