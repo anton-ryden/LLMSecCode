@@ -49,7 +49,7 @@ class Configurator:
             help="The number of patches to generate per bug",
         )
         parser.add_argument(
-            "--max_new_tokens",
+            "--max_length",
             type=int,
             default=self.max_length,
             help="The maximum lengt of the resposne from the model.\n Default is %(default)s.",
