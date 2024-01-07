@@ -95,8 +95,14 @@ class HumanEvalLoader(DatasetLoader):
         pass_at_k = cal_pass_at_k(run_eval_list, k)
         pass1 = pass_at_k[0].tolist()
         passX = pass_at_k[1].tolist()
+
+        avg_pass1 = sum(pass1) / len(pass1)
+        avg_passX = sum(passX) / len(passX)
+        
         pass_result = {
+            "Avg Pass@1": avg_pass1,
             "Pass@1": pass1,
+            f"Avg Pass@{temp}" : avg_passX,
             f"Pass@{temp}": passX
         }
         result_list.append(pass_result)
