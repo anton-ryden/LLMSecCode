@@ -217,6 +217,9 @@ class DatasetLoader(ABC):
     ) -> List[dict]:
         bugs = []
 
+        if(len(test_result_list) > len(ids)):
+                bugs.append(test_result_list[-1])
+
         for response, id, prompt, patch, time, tokens, test_result_1 in zip(
             responses,
             ids,
