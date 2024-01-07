@@ -15,7 +15,7 @@ class Configurator:
         self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
         self.patches_per_bug = 4
-        self.max_new_tokens = 600
+        self.max_length = 4096
         self.temperature = 0.8
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
@@ -51,8 +51,8 @@ class Configurator:
         parser.add_argument(
             "--max_new_tokens",
             type=int,
-            default=self.max_new_tokens,
-            help="The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.\n Default is %(default)s.",
+            default=self.max_length,
+            help="The maximum lengt of the resposne from the model.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--temperature",
