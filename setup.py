@@ -121,34 +121,14 @@ def prepare_quixbugs_java() -> None:
     except Exception as e:
         print(f"An error occurred: {e}")
 
-
-def prepare_humaneval() -> None:
-    file_path = os.path.join(SCRIPT_DIR, "human-eval/human_eval/execution.py")
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-
-    if 1 <= 58 <= len(lines):
-        lines[58 - 1] = lines[58 - 1].lstrip('#')
-
-        with open(file_path, 'w') as file:
-            file.writelines(lines)
-        print(f"Uncommented line {58} in {file_path}")
-
 if __name__ == "__main__":
     # QuixBugs Repository URL
     quixbugs_url = "https://github.com/jkoppel/QuixBugs"
 
-    # HumanEval Repository URL
-    humaneval_url = "https://github.com/openai/human-eval"
-
     # Clone QuixBugs
     clone_repository(quixbugs_url, "QuixBugs")
-
-    # Clone HumanEval
-    clone_repository(humaneval_url, "human-eval")
 
     # Make changes to QuixBugs Folder
     prepare_quixbugs_python()
     prepare_quixbugs_java()
-    prepare_humaneval()
     print("Setup completed successfully.")

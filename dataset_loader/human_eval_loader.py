@@ -1,19 +1,11 @@
 import os
 import numpy as np
-import sys
-#sys.path.append('./human-eval/human_eval')
-#from human_eval.human_eval import execution, evaluation, data
-#from evaluation import estimate_pass_at_k
-#from data import read_problems, HUMAN_EVAL
-
-#from human_eval.execution import check_correctness
- 
 
 from human_eval.execution import check_correctness
 from human_eval.evaluation import estimate_pass_at_k
+from human_eval.data import read_problems, HUMAN_EVAL
 from collections import defaultdict
 from typing import List, Dict
-from human_eval.data import read_problems, HUMAN_EVAL
 from dataset_loader.dataset_loader import DatasetLoader
 from utils import print_progress_bar
 
@@ -26,13 +18,10 @@ class HumanEvalLoader(DatasetLoader):
     def load_prompts(self) -> List[List[Dict[str, str]]]:
         print("Loading " + self.name + " prompts...")
         prompts = []
-        # Receive prompt and inst from DatasetLoader
-        system_prompt = self.system_prompt
 
         # Fetch all problems from HumanEval
-        problems = read_problems()
+        problems = read_problems(HUMAN_EVAL)
         data = [problems]
-        #print(data)
 
         num_tests = 0
         for task_id, entry in data[0].items():
@@ -40,12 +29,13 @@ class HumanEvalLoader(DatasetLoader):
             user_prompt = {"role": "user", "content": f"Complete the following Python code without any tests or explanation\n{entry['prompt']}\n{entry['test']}"}
             
             prompts.append({task_id: [system_prompt, user_prompt]})
+
+            # Change this if you want to run more tests
             if num_tests == 1: break
             num_tests += 1
         
 
         print(self.name + " prompts loaded.\n")
-        #print(prompts)
         self.prompts = prompts
 
     def format_code_responses(self, responses: List[str]) -> List[str]:
@@ -129,11 +119,6 @@ def cal_pass_at_k(results, k):
     pass_at_k = []
     for k in ks:
         pass_at_k.append(estimate_pass_at_k(total, correct, k))
-    #pass_at_k = {
-    #f"pass@{k}": estimate_pass_at_k(total, correct, k).mean()
-    #for k in ks
-    #if (total >= k).all()
-    #}
 
     return pass_at_k
 
@@ -150,8 +135,6 @@ def run_eval(bug_id, patch_id, patch, results):
     completion = patch
     future = check_correctness(problems[task_id], completion, timeout, completion_id)
     futures.append(future)
-
-    #assert completion_id == len(problems), "Some problems are not attempted."
 
     correctness_result = future
     results[correctness_result["task_id"]].append((correctness_result["completion_id"], correctness_result))
