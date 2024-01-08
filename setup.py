@@ -87,7 +87,12 @@ def prepare_quixbugs_java() -> None:
     original_path_test = os.path.join(SCRIPT_DIR, "QuixBugs/java_testcases/junit/")
     new_test_folder_name = "java_testcases/junit/"
     new_path_test = os.path.join(SCRIPT_DIR, new_test_folder_name)
+    additional_test_remove = os.path.join(SCRIPT_DIR, 'QuixBugs/java_testcases')
     try:
+        for filename in os.listdir(additional_test_remove):
+            if filename.endswith(".java"):
+                file_path = os.path.join(additional_test_remove, filename)
+                os.remove(file_path)
         # Create the destination directory if it doesn't exist
         os.makedirs(new_path, exist_ok=True)
 
