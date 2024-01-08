@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import copy
 
 from human_eval.execution import check_correctness
 from human_eval.evaluation import estimate_pass_at_k
@@ -19,20 +20,20 @@ class HumanEvalLoader(DatasetLoader):
         print("Loading " + self.name + " prompts...")
         prompts = []
 
+        # Receive prompt and inst from DatasetLoader
+        system_prompt = self.system_prompt
+
         # Fetch all problems from HumanEval
         problems = read_problems(HUMAN_EVAL)
         data = [problems]
 
-        num_tests = 0
         for task_id, entry in data[0].items():
-            system_prompt = {"role": "system", "content": "You are an expert programmer who fixes code. You are to answer with only code, no explanation or test cases under any circumstances."}
-            user_prompt = {"role": "user", "content": f"Complete the following Python code without any tests or explanation\n{entry['prompt']}\n{entry['test']}"}
-            
-            prompts.append({task_id: [system_prompt, user_prompt]})
 
-            # Change this if you want to run more tests
-            if num_tests == 1: break
-            num_tests += 1
+            prompt = copy.deepcopy(system_prompt)
+            prompt.append(
+                {"role": "user", "content": f"Complete the following Python code without any tests or explanation\n{entry['prompt']}\n{entry['test']}"}      
+            )
+            prompts.append({task_id: prompt})
         
 
         print(self.name + " prompts loaded.\n")
