@@ -72,26 +72,65 @@ python main.py -h
 ## Examples of supported models:
 | Supported coversation type                | Model name                                    | Prompt template |
 | ------------------------------------------| ----------------------------------------------| ----------------|
+| Code Completion/Code Insertion            | TheBloke/CodeLlama-7B-GPTQ                    | llama           |
+| Code Completion/Code Insertion            | TheBloke/CodeLlama-13B-GPTQ                   | llama           |
+| Code Completion/Code Insertion            | TheBloke/CodeLlama-34B-GPTQ                   | llama           |
 | Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama           |
 | Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama           |
 | Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama           |
-| Code Completion/Code Insertion            | TheBlokeCodeLlama-7B-GPTQ                     | llama           |
-| Code Completion/Code Insertion            | TheBlokeCodeLlama-13B-GPTQ                    | llama           |
-| Code Completion/Code Insertion            | TheBlokeCodeLlama-34B-GPTQ                    | llama           |
+| Code Insertion                            | TheBloke/CodeLlama-7B-Python-GPTQ             | llama           |
+| Code Insertion                            | TheBloke/CodeLlama-13B-Python-GPTQ            | llama           |
+| Code Insertion                            | TheBloke/CodeLlama-34B-Python-GPTQ            | llama           |
 | Instruction                               | TheBloke/Llama-2-7B-GPTQ                      | llama           |
 | Instruction                               | TheBloke/Llama-2-13B-GPTQ                     | llama           |
 | Instruction                               | TheBloke/Llama-2-70B-GPTQ                     | llama           |
 | Instruction                               | TheBloke/Llama-2-7B-Chat-GPTQ                 | llama           |
 | Instruction                               | TheBloke/Llama-2-13B-chat-GPTQ                | llama           |
 | Instruction                               | TheBloke/Llama-2-70B-chat-GPTQ                | llama           |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3b-instruct-GPTQ    | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7b-instruct-GPTQ    | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33b-instruct-GPTQ     | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3b-base-GPTQ        | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7b-base-GPTQ        | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33b-base-GPTQ         | deepseek_coder  |
-| ***Instruction***                         | ***TheBloke/deepseek-llm-7b-base-GPTQ***      |***deepseek_llm***|
-| ***Instruction***                         | ***TheBloke/deepseek-llm-67b-base-GPTQ***     | ***deepseek_llm***| 
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-base-GPTQ        | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7B-base-GPTQ        | deepseek_coder  |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33B-base-GPTQ         | deepseek_coder  |
+| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-base-GPTQ***      |***deepseek_llm***|
+| ***Instruction***                         | ***TheBloke/deepseek-llm-67B-base-GPTQ***     | ***deepseek_llm***|
+| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-chat-GPTQ***      |***deepseek_llm***|
+| ***Instruction***                         | ***TheBloke/deepseek-llm-67B-chat-GPTQ***     | ***deepseek_llm***|
+
+### Examples of models fine tuned for instruction
+| Model name                                    | Prompt template   |
+| --------------------------------------------- | ------------------|
+| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama             |
+| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama             |
+| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama             |
+| TheBloke/Llama-2-7B-Chat-GPTQ                 | llama             |
+| TheBloke/Llama-2-13B-chat-GPTQ                | llama             |
+| TheBloke/Llama-2-70B-chat-GPTQ                | llama             |
+| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder    |
+| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder    |
+| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder    |
+| ***TheBloke/deepseek-llm-7B-chat-GPTQ***      | ***deepseek_llm***|
+| ***TheBloke/deepseek-llm-67B-chat-GPTQ***     | ***deepseek_llm***|
+
+### Examples of models that support code insertion
+| Model name                                    | Prompt template   |
+| --------------------------------------------- | ------------------|
+| TheBloke/CodeLlama-7B-GPTQ                    | llama             |
+| TheBloke/CodeLlama-13B-GPTQ                   | llama             |
+| TheBloke/CodeLlama-34B-GPTQ                   | llama             |
+| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama             |
+| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama             |
+| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama             |
+| TheBloke/CodeLlama-7B-Python-GPTQ             | llama             |
+| TheBloke/CodeLlama-13B-Python-GPTQ            | llama             |
+| TheBloke/CodeLlama-34B-Python-GPTQ            | llama             |
+| TheBloke/deepseek-coder-1.3B-base-GPTQ        | deepseek_coder    |
+| TheBloke/deepseek-coder-6.7B-base-GPTQ        | deepseek_coder    |
+| TheBloke/deepseek-coder-33B-base-GPTQ         | deepseek_coder    |
+| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder    |
+| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder    |
+| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder    |
 
 ***NOTE: Models in bold do not support system prompts***
 ## Code completion
