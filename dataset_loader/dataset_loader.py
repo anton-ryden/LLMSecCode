@@ -29,7 +29,11 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_inst(bug: str, language: str) -> str:
-        return f"""The following {language} function is buggy please provide a solution:\n{bug}"""
+        return f"""
+Please repair the buggy function. You are only allowed to modify the given code. Please return all completed function in a codeblock. Here is the given code to do repair:
+```{language}
+{bug}
+```"""
 
     @staticmethod
     def check_python_syntax(code: str) -> dict:
