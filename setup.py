@@ -118,6 +118,17 @@ def prepare_quixbugs_java() -> None:
                 destination_path = os.path.join(new_path_test, item)
                 shutil.move(source_path, destination_path)
 
+
+        # Remove comments in java files
+        for file in os.listdir(new_path):
+            with open(os.path.join(new_path, file), "r") as f:
+                data = f.read()
+                # Remove comments from the data
+                cleaned_data = re.sub(r'/\*(.*?)\*/', '', data, flags=re.DOTALL)
+                # Write cleaned data back to file
+                with open(os.path.join(new_path, file), "w") as f:
+                    f.write(cleaned_data)
+
     except Exception as e:
         print(f"An error occurred: {e}")
 
