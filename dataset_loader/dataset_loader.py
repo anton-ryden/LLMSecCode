@@ -1,5 +1,6 @@
 from typing import List, Dict
 from abc import ABC, abstractmethod
+import os
 import re
 import subprocess
 
@@ -145,7 +146,7 @@ Please repair the buggy function. You are only allowed to modify the given code.
                             java_code_cleaned = java_code_cleaned[
                                 :triple_backticks_index
                             ]
-                            patches_code.append(java_code_cleaned)
+                        patches_code.append(java_code_cleaned)
                     else:
                         java_code_cleaned = code_start
                         # Check for triple backticks and remove content after them
@@ -154,7 +155,7 @@ Please repair the buggy function. You are only allowed to modify the given code.
                             java_code_cleaned = java_code_cleaned[
                                 :triple_backticks_index
                             ]
-                            patches_code.append(java_code_cleaned)
+                        patches_code.append(java_code_cleaned)
                         # If no end match found, keep the original code
                         # patches_code.append(code_start)
                 else:
@@ -163,7 +164,7 @@ Please repair the buggy function. You are only allowed to modify the given code.
                     triple_backticks_index = java_code_cleaned.find("```")
                     if triple_backticks_index != -1:
                         java_code_cleaned = java_code_cleaned[:triple_backticks_index]
-                        patches_code.append(java_code_cleaned)
+                    patches_code.append(java_code_cleaned)
                     # If no start match found, keep the original patch
                     # patches_code.append(patch)
 
@@ -176,14 +177,20 @@ Please repair the buggy function. You are only allowed to modify the given code.
         error_message = ""
         syntax_error = False
         line_number = None
+        file_name=["SHORTEST_PATH_LENGTH.java","SHORTEST_PATHS.java", "BREADTH_FIRST_SEARCH.java", "TOPOLOGICAL_ORDERING.java", "DETECT_CYCLE.java", "MINIMUM_SPANNING_TREE.java", "REVERSE_LINKED_LIST.java", "DEPTH_FIRST_SEARCH.java"]
 
         try:
             if file_path is not None:
-                # Use subprocess to invoke the Java compiler directly on the file
-                result = subprocess.run(
-                    ["javac", file_path], check=True, stderr=subprocess.PIPE, text=True
-                )
-                syntax_error = False
+                if os.path.basename(file_path) in file_name:
+                    command = ['javac' ,file_path, "./QuixBugs/java_programs/Node.java", "./QuixBugs/java_programs/WeightedEdge.java"]
+                    # Use subprocess to invoke the Java compiler directly on the file
+                    result = subprocess.run(
+                        command, check=True, stderr=subprocess.PIPE, text=True
+                    )
+                else:
+                    result = subprocess.run(
+                        ["javac", file_path], check=True, stderr=subprocess.PIPE, text=True
+                    )
             else:
                 syntax_error = True
 

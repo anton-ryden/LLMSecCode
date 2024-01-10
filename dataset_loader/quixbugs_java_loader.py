@@ -68,7 +68,6 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                 with open(output_file, "r") as output_file_reader:
                     output_content = output_file_reader.read()  
-                print(f'test for {class_name}_TEST')
                 # Use regular expression to find lines containing test results
                 pattern = re.compile(r'(\d+) tests completed, (\d+) failed')
                 match = pattern.search(output_content)
