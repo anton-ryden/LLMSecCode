@@ -47,8 +47,7 @@ class ModelLoader:
 
         print("Loading of " + self.name + " model complete.\n")
         self.model, self.tokenizer = model, tokenizer
-        
-    
+
     def unload_model_tokenizer(self):
         del self.model
         del self.tokenizer
@@ -56,7 +55,7 @@ class ModelLoader:
 
     def set_chat_template(self, template_name: str) -> str:
         content = ""
-        with open("./prompt_templates/" + template_name, 'r') as file:
+        with open("./prompt_templates/" + template_name, "r") as file:
             for line in file:
                 content += line.rstrip().lstrip()
         return content
@@ -153,7 +152,6 @@ class ModelLoader:
         total_bugs: int,
     ) -> Tuple[List[str], float]:
         tot_time = 0
-        input = None
         batch_completions = []
         gen_cfg = GenerationConfig.from_model_config(self.model.config)
 
@@ -191,23 +189,13 @@ class ModelLoader:
                     tot_time += time.time() - start
                     batch_completions.extend(generated_ids)
                     generated_count += batch_size
-                    # Check GPU memory usage
-                    memory_allocated = torch.cuda.memory_allocated(self.device)
-
-                    # Assume a buffer for safety
-                    buffer_size = 2e9  # 2 GB
-                    if memory_allocated < (
-                        torch.cuda.get_device_properties(self.device).total_memory
-                        - buffer_size
-                    ):
-                        # Double the batch size for the next iteration
-                        self.batch_size *= 2
 
                     # Print progress
                     print_progress_bar(
                         (bug_nr * self.patch_size) + generated_count,
                         total_bugs * self.patch_size,
                     )
+                    torch.cuda.empty_cache()
 
             except RuntimeError:
                 self.batch_size = int(self.batch_size / 2)
