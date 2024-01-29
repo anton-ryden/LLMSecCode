@@ -1,14 +1,15 @@
 from typing import List, Dict
+
 from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
-from utils import write_dict_to_json
+from utils import write_dict_to_json, get_summary
 
 
 def evaluate_models_on_datasets(
     model_loaders: List[ModelLoader],
     dataset_loaders: List[DatasetLoader],
-    results_dir: str,
+    configurator: Configurator,
 ):
     """
     Evaluate a list of model loaders on a list of dataset loaders.
@@ -23,6 +24,7 @@ def evaluate_models_on_datasets(
     # Iterate over each model loader
     for model_loader in model_loaders:
         model_loader.load_model_tokenizer()
+
         model_result = evaluate_single_model_on_datasets(model_loader, dataset_loaders)
         # Append results for the current model
         evaluation_results.append({model_loader.name: model_result})
@@ -30,7 +32,17 @@ def evaluate_models_on_datasets(
         # Write model results to json file
         write_dict_to_json(
             {model_loader.name: model_result},
-            "./results/" + results_dir + "/" + model_loader.name + ".json",
+            "./results/" + configurator.results_dir + "/" + model_loader.name + ".json",
+        )
+
+        summary = get_summary(model_loader.name, model_result, configurator)
+        write_dict_to_json(
+            summary,
+            "./results/"
+            + configurator.results_dir
+            + "/summary_"
+            + model_loader.name
+            + ".json",
         )
 
         # Unload model and tokenizer from memory
@@ -106,4 +118,4 @@ if __name__ == "__main__":
     dataset_loaders = configurator.get_dataset_loaders()
 
     # Generate answers and evaluate
-    evaluate_models_on_datasets(model_loaders, dataset_loaders, configurator.results_dir)
+    evaluate_models_on_datasets(model_loaders, dataset_loaders, configurator)
