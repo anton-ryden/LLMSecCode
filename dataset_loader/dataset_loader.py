@@ -30,8 +30,7 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_inst(bug: str, language: str) -> str:
-        return f"""
-Please repair the buggy function. You are only allowed to modify the given code. Please return all completed function in a codeblock. Here is the given code to do repair:
+        return f"""Please repair the buggy function. You are only allowed to modify the given code. Please return all completed function in a codeblock. Here is the given code to do repair:
 ```{language}
 {bug}
 ```"""
@@ -66,38 +65,37 @@ Please repair the buggy function. You are only allowed to modify the given code.
     @staticmethod
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
         def extract_code_from_patch(patch: str) -> str:
-                patch = patch.replace("\t", "    ")
-                patch = patch.replace("\\n", "\n")
-                patch = patch.strip()
-                # Define the regex pattern
-                pattern = re.compile(r'\b(?:import|from|def)\b|\w*(?:import|from|def)\w*')
+            patch = patch.replace("\t", "    ")
+            patch = patch.replace("\\n", "\n")
+            patch = patch.strip()
+            # Define the regex pattern
+            pattern = re.compile(r"\b(?:import|from|def)\b|\w*(?:import|from|def)\w*")
 
-                # Find all matches in the patched string
-                matches = pattern.finditer(patch)
+            # Find all matches in the patched string
+            matches = pattern.finditer(patch)
 
-                # Extract the start index of each match and store them in a list
-                function_indices = [match.start() for match in matches]
-                function_indices.sort()
+            # Extract the start index of each match and store them in a list
+            function_indices = [match.start() for match in matches]
+            function_indices.sort()
 
-                for i, function_index in enumerate(function_indices):
-                    temp = patch[function_index:]
+            for i, function_index in enumerate(function_indices):
+                temp = patch[function_index:]
 
-                    lines = temp.split("\n")
-                    line_end_index = 0
-                    for i, line in enumerate(lines[1:]):
-                        pattern2 = re.compile(r'\b(import|from|def)\b')
-                        if pattern2.search(line):
-                            continue
-                        if len(line) > 0 and line[0] != " ":
-                            for j in range(i+1):
-                                line_end_index += len(lines[j])+1
+                lines = temp.split("\n")
+                line_end_index = 0
+                for i, line in enumerate(lines[1:]):
+                    pattern2 = re.compile(r"\b(import|from|def)\b")
+                    if pattern2.search(line):
+                        continue
+                    if len(line) > 0 and line[0] != " ":
+                        for j in range(i + 1):
+                            line_end_index += len(lines[j]) + 1
 
-                            return patch[function_index:function_index+line_end_index]   
-                        
-                    return patch[function_index:]                     
+                        return patch[function_index : function_index + line_end_index]
 
-                return ""
-        
+                return patch[function_index:]
+
+            return ""
 
         ret_responses = []
         for patches in responses:
@@ -177,19 +175,36 @@ Please repair the buggy function. You are only allowed to modify the given code.
         error_message = ""
         syntax_error = False
         line_number = None
-        file_name=["SHORTEST_PATH_LENGTH.java","SHORTEST_PATHS.java", "BREADTH_FIRST_SEARCH.java", "TOPOLOGICAL_ORDERING.java", "DETECT_CYCLE.java", "MINIMUM_SPANNING_TREE.java", "REVERSE_LINKED_LIST.java", "DEPTH_FIRST_SEARCH.java"]
+        file_name = [
+            "SHORTEST_PATH_LENGTH.java",
+            "SHORTEST_PATHS.java",
+            "BREADTH_FIRST_SEARCH.java",
+            "TOPOLOGICAL_ORDERING.java",
+            "DETECT_CYCLE.java",
+            "MINIMUM_SPANNING_TREE.java",
+            "REVERSE_LINKED_LIST.java",
+            "DEPTH_FIRST_SEARCH.java",
+        ]
 
         try:
             if file_path is not None:
                 if os.path.basename(file_path) in file_name:
-                    command = ['javac' ,file_path, "./QuixBugs/java_programs/Node.java", "./QuixBugs/java_programs/WeightedEdge.java"]
+                    command = [
+                        "javac",
+                        file_path,
+                        "./QuixBugs/java_programs/Node.java",
+                        "./QuixBugs/java_programs/WeightedEdge.java",
+                    ]
                     # Use subprocess to invoke the Java compiler directly on the file
                     result = subprocess.run(
                         command, check=True, stderr=subprocess.PIPE, text=True
                     )
                 else:
                     result = subprocess.run(
-                        ["javac", file_path], check=True, stderr=subprocess.PIPE, text=True
+                        ["javac", file_path],
+                        check=True,
+                        stderr=subprocess.PIPE,
+                        text=True,
                     )
             else:
                 syntax_error = True
@@ -228,8 +243,8 @@ Please repair the buggy function. You are only allowed to modify the given code.
     ) -> List[dict]:
         bugs = []
 
-        if(len(test_result_list) > len(ids)):
-                bugs.append(test_result_list[-1])
+        if len(test_result_list) > len(ids):
+            bugs.append(test_result_list[-1])
 
         for response, id, prompt, patch, time, tokens, test_result_1 in zip(
             responses,
