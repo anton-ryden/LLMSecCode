@@ -10,6 +10,7 @@
     {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
         {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
     {% endif %}
+    
     {% if loop.index0 == 0 and system_message != false %}
         {% set content = system_message + '\n' + message['content'] %}
     {% else %}
@@ -24,4 +25,3 @@
         {{'### Response:\n' + message['content'] + '\n<|EOT|>\n'}}
     {% endif %}
 {% endfor %}
-
