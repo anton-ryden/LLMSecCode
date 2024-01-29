@@ -34,7 +34,10 @@ class QuixBugsPythonLoader(DatasetLoader):
 
                         prompt = copy.deepcopy(system_prompt)
                         prompt.append(
-                            {"role": "user", "content": self.format_inst(file_data, "python")}
+                            {
+                                "role": "user",
+                                "content": self.format_inst(file_data, "python"),
+                            }
                         )
                         prompts.append({file_name: prompt})
                 else:
@@ -53,7 +56,9 @@ class QuixBugsPythonLoader(DatasetLoader):
             command = f"pytest {program_path}"
 
             # Run the pytest command and capture the output
-            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(
+                command, shell=True, capture_output=True, text=True, timeout=10
+            )
             if result:
                 # Extract the last line from the output
                 last_line = result.stdout.strip().splitlines()[-1]
@@ -74,7 +79,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         except subprocess.TimeoutExpired:
             failed_tests_count = "null"
             passed_tests_count = "null"
-        
+
         return failed_tests_count, passed_tests_count
 
     def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
