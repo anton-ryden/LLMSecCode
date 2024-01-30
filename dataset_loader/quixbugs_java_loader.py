@@ -4,7 +4,6 @@ import copy
 import logging
 import re
 import subprocess
-import shutil
 from dataset_loader.dataset_loader import DatasetLoader
 from utils import print_progress_bar
 
@@ -22,14 +21,15 @@ class QuixBugsJavaLoader(DatasetLoader):
         # Receive prompt and inst from DatasetLoader
         system_prompt = self.system_prompt
 
-        # Get all Java files in QuickBugs
-        java_dir = "./QuixBugs/java_programs_bug"
-        java_list = os.listdir(java_dir)
+        # Get all Java files in QuixBugs director
+        java_directory = "./QuixBugs/java_programs_bug"
+        java_file_list = os.listdir(java_directory)
 
-        for file_name in java_list:
+        for file_name in java_file_list:
             try:
-                file_path_full = os.path.join(java_dir, file_name)
+                file_path_full = os.path.join(java_directory, file_name)
                 if os.path.isfile(file_path_full):
+                    # Read the content of each Java file and create prompts
                     with open(file_path_full, "r") as file:
                         file_data = file.read()
 
@@ -58,15 +58,17 @@ class QuixBugsJavaLoader(DatasetLoader):
         quixbugs_dir = "./QuixBugs/"
         failed_tests_count = 0
         passed_tests_count = 0
+
         try:
             if "QuixBugs" not in os.getcwd():
                 os.chdir(quixbugs_dir)
             else:
-                logging.error(f"Current wokring directory {os.getcwd()}")
+                logging.error(f"Current working directory {os.getcwd()}")
 
-            command = f"gradle test --tests {class_name}_TEST"
+            # Run Gradle test command and capture the output
+            gradle_command = f"gradle test --tests {class_name}_TEST"
             result = subprocess.run(
-                command, shell=True, capture_output=True, text=True, timeout=60
+                gradle_command, shell=True, capture_output=True, text=True, timeout=60
             )
 
             os.chdir(original_dir)
@@ -106,10 +108,17 @@ class QuixBugsJavaLoader(DatasetLoader):
                         test_instances = re.findall(r"@Test", java_code)
                         passed_tests_count = len(test_instances)
 
+        except subprocess.TimeoutExpired:
+            # Handle timeout and kill the pytest subprocess
+            failed_tests_count = "null"
+            passed_tests_count = "null"
+            subprocess.run(["pkill", "-f", gradle_command])
         except Exception as e:
             # Handle any other unexpected exceptions
             logging.error(e)
-            subprocess.run(["pkill", "-f", command])
+            failed_tests_count = "null"
+            passed_tests_count = "null"
+            subprocess.run(["pkill", "-f", gradle_command])
 
         os.chdir(original_dir)
         return passed_tests_count, failed_tests_count
@@ -122,16 +131,15 @@ class QuixBugsJavaLoader(DatasetLoader):
 
         try:
             print("Starting testing for: " + self.name)
-            for id, bugs in zip(ids, patch_list):
+            for test_id, bugs in zip(ids, patch_list):
                 test_list = []
                 for patch_nr, patch in enumerate(bugs, start=1):
-                    dynamic_file_path = os.path.join(dynamic_directory, id)
+                    dynamic_file_path = os.path.join(dynamic_directory, test_id)
 
-                    # Write patch to file
                     with open(dynamic_file_path, "w") as file:
                         file.write(patch)
 
-                    class_name = id.split(".")[0]
+                    class_name = test_id.split(".")[0]
                     syntax_error = None
                     if patch != "":
                         syntax_error = super().check_java_syntax(dynamic_file_path)
@@ -142,27 +150,24 @@ class QuixBugsJavaLoader(DatasetLoader):
                         }
 
                     if syntax_error["syntax_error"] != True:
-                        # Execute run_gradle_test function
                         passed_count, failed_count = self.run_gradle_test(class_name)
                     else:
                         passed_count, failed_count = "null", "null"
 
                     test_run_info = {
-                        "TestProgramName": id,
+                        "TestProgramName": test_id,
                         "Passed": passed_count,
                         "Failed": failed_count,
                     }
                     test_list.append({**test_run_info, **syntax_error})
 
-                    # Read content before
                     before = ""
                     file_path = os.path.join(
-                        "./QuixBugs/java_programs_bug", id.split(".")[0] + ".txt"
+                        "./QuixBugs/java_programs_bug", test_id.split(".")[0] + ".txt"
                     )
                     with open(file_path, "r") as file:
                         before = file.read()
 
-                    # Write old content to file
                     with open(dynamic_file_path, "w") as file:
                         file.write(before)
 
