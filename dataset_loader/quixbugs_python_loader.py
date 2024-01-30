@@ -57,7 +57,7 @@ class QuixBugsPythonLoader(DatasetLoader):
 
             # Run the pytest command and capture the output
             result = subprocess.run(
-                command, shell=True, capture_output=True, text=True, timeout=10
+                command, shell=True, capture_output=True, text=True, timeout=60
             )
             if result:
                 # Extract the last line from the output
@@ -79,6 +79,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         except subprocess.TimeoutExpired:
             failed_tests_count = "null"
             passed_tests_count = "null"
+            subprocess.run(["pkill", "-f", command])
 
         return failed_tests_count, passed_tests_count
 
