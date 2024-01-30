@@ -78,64 +78,61 @@ def prepare_quixbugs_python() -> None:
     except Exception as e:
         raise Exception(f"Error deleting .git directory in QuixBugs: {e}")
 
+    # Remove comments in python files
+    for file in os.listdir(new_path):
+        with open(os.path.join(new_path, file), "r") as f:
+            data = f.read()
+            # Remove comments from the data
+            cleaned_data = re.sub(r"\"\"\"(.*?)\"\"\"", "", data, flags=re.DOTALL)
+            # Remove excess newlines
+            cleaned_data = re.sub(r"\n{2,}", "\n", cleaned_data)
+            # Write cleaned data back to file
+            with open(os.path.join(new_path, file), "w") as f:
+                f.write(cleaned_data)
+
+
 def prepare_quixbugs_java() -> None:
     """Prepare QuixBugs directory by copying, renaming, and excluding specific files."""
     original_path = os.path.join(SCRIPT_DIR, "QuixBugs/java_programs")
-    new_folder_name = "java_programs_bug"
+    new_folder_name = "QuixBugs/java_programs_bug"
     new_path = os.path.join(SCRIPT_DIR, new_folder_name)
-    exclude_files = ["Node.java", "WeightedEdge.java", "Node.class", "WeightedEdge.class"]
-    original_path_test = os.path.join(SCRIPT_DIR, "QuixBugs/java_testcases/junit/")
-    new_test_folder_name = "java_testcases/junit/"
-    new_path_test = os.path.join(SCRIPT_DIR, new_test_folder_name)
-    additional_test_remove = os.path.join(SCRIPT_DIR, 'QuixBugs/java_testcases')
+
+    exclude_files = [
+        "Node.java",
+        "WeightedEdge.java",
+        "Node.class",
+        "WeightedEdge.class",
+    ]
+
     try:
-        for filename in os.listdir(additional_test_remove):
-            if filename.endswith(".java"):
-                file_path = os.path.join(additional_test_remove, filename)
-                os.remove(file_path)
         # Create the destination directory if it doesn't exist
         os.makedirs(new_path, exist_ok=True)
 
         # Move .java files to the destination directory
         for filename in os.listdir(original_path):
             source_path = os.path.join(original_path, filename)
-            destination_path = os.path.join(new_path, filename)
+            destination_path = os.path.join(new_path, filename.split(".")[0] + ".txt")
 
             # Check if the file is a .java file and not in the exclude list
             if filename.endswith(".java") and filename not in exclude_files:
-                shutil.move(source_path, destination_path)
-
-        # Remove .class files from the source directory
-        for filename in os.listdir(original_path):
-            file_path = os.path.join(original_path, filename)
-
-            # Check if the file is a .class file and not in the exclude list
-            if filename.endswith(".class") and filename not in exclude_files:
-                os.remove(file_path)
-        
-        # Create the destination directory if it doesn't exist
-        os.makedirs(new_path_test, exist_ok=True)
-
-        # Move all files and folders from source to destination
-        for item in os.listdir(original_path_test):
-            if item.endswith("TEST.java"):
-                source_path = os.path.join(original_path_test, item)
-                destination_path = os.path.join(new_path_test, item)
-                shutil.move(source_path, destination_path)
-
+                # if filename.endswith(".java") and filename:
+                shutil.copy(source_path, destination_path)
 
         # Remove comments in java files
         for file in os.listdir(new_path):
             with open(os.path.join(new_path, file), "r") as f:
                 data = f.read()
                 # Remove comments from the data
-                cleaned_data = re.sub(r'/\*(.*?)\*/', '', data, flags=re.DOTALL)
+                cleaned_data = re.sub(r"/\*(.*?)\*/", "", data, flags=re.DOTALL)
+                # Remove excess newlines
+                cleaned_data = re.sub(r"\n{2,}", "\n", cleaned_data)
                 # Write cleaned data back to file
                 with open(os.path.join(new_path, file), "w") as f:
                     f.write(cleaned_data)
 
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     # QuixBugs Repository URL
