@@ -55,27 +55,27 @@ class QuixBugsPythonLoader(DatasetLoader):
     def run_tests(self, program_path: str) -> (int, int):
         try:
             # Run the pytest command and capture the output
+            pytest_command = f"pytest {program_path}"
             result = subprocess.run(
-                command, shell=True, capture_output=True, text=True, timeout=60
+                pytest_command, shell=True, capture_output=True, text=True, timeout=60
             )
-            if result:
+
+            if result and result.stdout:
                 # Extract the last line from the output
                 last_line = result.stdout.strip().splitlines()[-1]
-                # Use a regular expression to find the number of failed and passed tests
-                match = re.search(r"(\d+)(?: failed)?(?:,\s*(\d+) passed)?", last_line)
 
-                # Extract the number of failed and passed tests if a match is found
-                failed_tests_count = (
-                    int(match.group(1)) if match.group(1) is not None else 0
-                )
-                passed_tests_count = (
-                    int(match.group(2)) if match.group(2) is not None else 0
-                )
+                # Use a regular expression to find the number of failed and passed tests
+                passed_match = re.search(r"(\d+) passed", last_line)
+                failed_match = re.search(r"(\d+) failed", last_line)
+
+                passed_tests_count = int(passed_match.group(1)) if passed_match else 0
+                failed_tests_count = int(failed_match.group(1)) if failed_match else 0
             else:
-                failed_tests_count = 0
-                passed_tests_count = 0
+                passed_tests_count = failed_tests_count = 0
+                print("Error running pytest subprocess or no output.")
 
         except subprocess.TimeoutExpired:
+            # Handle timeout and kill the pytest subprocess
             failed_tests_count = "null"
             passed_tests_count = "null"
             subprocess.run(["pkill", "-f", pytest_command])
