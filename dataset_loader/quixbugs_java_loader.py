@@ -109,6 +109,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         except Exception as e:
             # Handle any other unexpected exceptions
             logging.error(e)
+            subprocess.run(["pkill", "-f", command])
 
         os.chdir(original_dir)
         return passed_tests_count, failed_tests_count
