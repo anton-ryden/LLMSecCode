@@ -22,14 +22,15 @@ class QuixBugsPythonLoader(DatasetLoader):
         system_prompt = self.system_prompt
 
         # Get all python files in QuixBugs
-        python_dir = "./QuixBugs/python_programs_bug"
-        python_list = os.listdir(python_dir)
+        python_directory = "./QuixBugs/python_programs_bug"
+        python_file_list = os.listdir(python_directory)
 
-        for file_name in python_list:
+        for file_name in python_file_list:
             try:
-                file_path_full = os.path.join(python_dir, file_name)
-                if os.path.isfile(file_path_full):
-                    with open(file_path_full, "r") as file:
+                file_path = os.path.join(python_directory, file_name)
+                if os.path.isfile(file_path):
+                    # Read the content of each Python file and create prompts
+                    with open(file_path, "r") as file:
                         file_data = file.read()
 
                         prompt = copy.deepcopy(system_prompt)
@@ -41,7 +42,7 @@ class QuixBugsPythonLoader(DatasetLoader):
                         )
                         prompts.append({file_name: prompt})
                 else:
-                    logging.error(f"'{file_path_full}' is not a file.")
+                    logging.error(f"'{file_path}' is not a file.")
             except Exception as e:
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
@@ -53,8 +54,6 @@ class QuixBugsPythonLoader(DatasetLoader):
 
     def run_tests(self, program_path: str) -> (int, int):
         try:
-            command = f"pytest {program_path}"
-
             # Run the pytest command and capture the output
             result = subprocess.run(
                 command, shell=True, capture_output=True, text=True, timeout=60
@@ -79,7 +78,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         except subprocess.TimeoutExpired:
             failed_tests_count = "null"
             passed_tests_count = "null"
-            subprocess.run(["pkill", "-f", command])
+            subprocess.run(["pkill", "-f", pytest_command])
 
         return failed_tests_count, passed_tests_count
 
@@ -89,45 +88,50 @@ class QuixBugsPythonLoader(DatasetLoader):
         bug_nr = 0
 
         print("Starting testing for: " + self.name)
-        for id, bugs in zip(ids, patch_list):
+        for test_id, bugs in zip(ids, patch_list):
             test_list = []
             for patch_nr, patch in enumerate(bugs, start=1):
                 # File paths
                 dynamic_directory = "./QuixBugs/python_programs"
                 test_module_directory = "./QuixBugs/python_testcases"
-                program_paths = os.path.join(test_module_directory, f"test_{id}")
-                dynamic_file_path = os.path.join(dynamic_directory, id)
+                program_path = os.path.join(test_module_directory, f"test_{test_id}")
+                dynamic_file_path = os.path.join(dynamic_directory, test_id)
 
                 # Create the directory if it doesn't exist and write patch to file
                 os.makedirs(dynamic_directory, exist_ok=True)
                 with open(dynamic_file_path, "w") as file:
                     file.write(patch)
 
-                if patch != "":
-                    syntax_error = super().check_python_syntax(patch)
-                else:
-                    syntax_error = {
+                # Check syntax errors and run tests on the program
+                syntax_error = (
+                    super().check_python_syntax(patch)
+                    if patch != ""
+                    else {
                         "syntax_error": "null",
                         "error_message": "Empty file, could not extract any code",
                     }
+                )
 
                 if syntax_error["syntax_error"] == False:
-                    failed_count, passed_count = self.run_tests(program_paths)
+                    failed_count, passed_count = self.run_tests(program_path)
                 else:
                     failed_count, passed_count = "null", "null"
 
+                # Compile test run information and append to the test list
                 test_run_info = {
-                    "TestProgramName": id,
+                    "TestProgramName": test_id,
                     "Passed": passed_count,
                     "Failed": failed_count,
                 }
                 test_list.append({**test_run_info, **syntax_error})
 
+                # Print progress bar
                 print_progress_bar(
                     len(bugs) * bug_nr + patch_nr,
                     len(ids) * len(bugs),
                 )
 
+            # Append the test list for each test program to the result list
             result_list.append(test_list)
             bug_nr += 1
         print("\n")
