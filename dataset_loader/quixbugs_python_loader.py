@@ -52,12 +52,22 @@ class QuixBugsPythonLoader(DatasetLoader):
     def format_code_responses(self, responses: List[List[str]]) -> List[List[str]]:
         return super().format_python_responses(responses)
 
-    def run_tests(self, program_path: str) -> (int, int):
+    def run_tests(self, program_path: str, test_id: str) -> (int, int):
         try:
             # Run the pytest command and capture the output
             pytest_command = f"pytest {program_path}"
+
+            timeout = 60
+            if test_id == "knapsack.py" or test_id == "levenshtein.py":
+                # KNAPSACK and LEVEHSHTEIN might need a long time to finish
+                timeout = 300
+
             result = subprocess.run(
-                pytest_command, shell=True, capture_output=True, text=True, timeout=60
+                pytest_command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
             )
 
             if result and result.stdout:
@@ -113,7 +123,7 @@ class QuixBugsPythonLoader(DatasetLoader):
                 )
 
                 if syntax_error["syntax_error"] == False:
-                    failed_count, passed_count = self.run_tests(program_path)
+                    failed_count, passed_count = self.run_tests(program_path, test_id)
                 else:
                     failed_count, passed_count = "null", "null"
 

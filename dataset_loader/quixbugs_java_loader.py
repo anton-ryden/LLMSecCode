@@ -67,8 +67,18 @@ class QuixBugsJavaLoader(DatasetLoader):
 
             # Run Gradle test command and capture the output
             gradle_command = f"gradle test --tests {class_name}_TEST"
+
+            timeout = 60
+            if class_name == "KNAPSACK" or class_name == "LEVENSHTEIN":
+                # KNAPSACK and LEVEHSHTEIN might need a long time to finish
+                timeout = 300
+
             result = subprocess.run(
-                gradle_command, shell=True, capture_output=True, text=True, timeout=60
+                gradle_command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
             )
 
             os.chdir(original_dir)
