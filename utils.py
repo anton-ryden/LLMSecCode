@@ -58,6 +58,7 @@ def get_summary(model_name: str, model_result: str, configurator):
     model_time = 0
     model_plausable_patch = 0
     model_total_patches = 0
+    model_syntax_error = 0
     model_correct_list = []
     model_total_list = []
     model_total_list
@@ -72,6 +73,7 @@ def get_summary(model_name: str, model_result: str, configurator):
         dataset_time = 0
         dataset_plausable_patch = 0
         dataset_total_patches = 0
+        dataset_syntax_error = 0
         dataset_correct_list = []
         dataset_total_list = []
 
@@ -88,6 +90,8 @@ def get_summary(model_name: str, model_result: str, configurator):
                 dataset_total_patches += 1
                 passed = patch_dict["test_result"]["Passed"]
                 failed = patch_dict["test_result"]["Failed"]
+                if patch_dict["test_result"]["syntax_error"]:
+                    dataset_syntax_error += 1
                 if isinstance(passed, int) and isinstance(failed, int):
                     dataset_passed += passed
                     dataset_failed += failed
@@ -108,6 +112,7 @@ def get_summary(model_name: str, model_result: str, configurator):
         model_tokens_generated += dataset_tokens_generated
         model_tokens_sec += dataset_tokens_sec
         model_time += dataset_time
+        model_syntax_error += dataset_syntax_error
 
         pass_1 = estimate_pass_at_k(
             np.array(dataset_total_list), np.array(dataset_correct_list), 1
@@ -125,6 +130,7 @@ def get_summary(model_name: str, model_result: str, configurator):
             "Passed tests": dataset_passed,
             "Failed tests": dataset_failed,
             "Plausable patches": dataset_plausable_patch,
+            "Syntax errors": dataset_syntax_error,
             "Total patches": dataset_total_patches,
             "Tokens generated": dataset_tokens_generated,
             "Tokens per patch": dataset_tokens_generated / dataset_total_patches,
@@ -152,6 +158,7 @@ def get_summary(model_name: str, model_result: str, configurator):
         "Failed tests": model_failed,
         "Plausable patches": model_plausable_patch,
         "Total patches": model_total_patches,
+        "Syntax errors": model_syntax_error,
         "Tokens generated": model_tokens_generated,
         "Tokens per patch": model_tokens_generated / model_total_patches,
         "Tokens/sec": model_tokens_sec,
