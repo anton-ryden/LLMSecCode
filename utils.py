@@ -105,6 +105,9 @@ def get_summary(model_name: str, model_result: str, configurator):
         model_total_patches += dataset_total_patches
         model_correct_list += dataset_correct_list
         model_total_list += dataset_total_list
+        model_tokens_generated += dataset_tokens_generated
+        model_tokens_sec += dataset_tokens_sec
+        model_time += dataset_time
 
         pass_1 = estimate_pass_at_k(
             np.array(dataset_total_list), np.array(dataset_correct_list), 1
