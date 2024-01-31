@@ -69,14 +69,20 @@ class HumanEvalLoader(DatasetLoader):
                     "Failed": failed_count,
                 }
 
-                if run_eval_list[id][patch_nr - 1][1]["result"]:
+                # If it contains enyhing other than this it is a syntax error
+                if (
+                    run_eval_list[id][patch_nr - 1][1]["result"] == "failed: "
+                    or run_eval_list[id][patch_nr - 1][1]["result"] == "passed"
+                ):
                     syntax_error = {
-                        "syntax_error": run_eval_list[id][patch_nr - 1][1]["result"],
+                        "syntax_error": False,
+                        "error_message": "",
                     }
+
                 else:
                     syntax_error = {
-                        "syntax_error": "null",
-                        "error_message": "Empty file, could not extract any code",
+                        "syntax_error": True,
+                        "error_message": run_eval_list[id][patch_nr - 1][1]["result"],
                     }
 
                 test_list.append({**test_run_info, **syntax_error})
