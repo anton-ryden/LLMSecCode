@@ -12,7 +12,6 @@ class QuixBugsPythonLoader(DatasetLoader):
     def __init__(self) -> None:
         super().__init__()
         self.name = "QuixBugs Python"
-        self.load_prompts()
 
     def load_prompts(self) -> List[List[Dict[str, str]]]:
         print("Loading " + self.name + " prompts...")

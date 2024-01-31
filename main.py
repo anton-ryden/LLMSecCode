@@ -64,6 +64,9 @@ def evaluate_single_model_on_datasets(
 
     # Iterate over each dataset loader
     for dataset_loader in dataset_loaders:
+        # Load prompts
+        dataset_loader.load_prompts()
+
         formatted_dataset_result = evaluate_single_model_on_dataset(
             model_loader, dataset_loader
         )
