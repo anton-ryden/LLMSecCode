@@ -30,7 +30,7 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_inst(bug: str, language: str) -> str:
-        return f"""Please repair the buggy function. You are only allowed to modify the given code. Please return all completed function in a codeblock. Here is the given code to do repair:
+        return f"""Please repair the buggy function. You are only allowed to modify the given code. Do not provide any explainations. Please return all completed functions in a codeblock. Here is the given code to do repair:
 ```{language}
 {bug}
 ```"""
@@ -61,6 +61,42 @@ class DatasetLoader(ABC):
             syntax_error = True
 
         return {"syntax_error": syntax_error, "error_message": error_message}
+
+    @staticmethod
+    def format_responses(responses: List[List[str]]) -> List[List[str]]:
+        def extract_code_from_patch(patch: str) -> str:
+            patch = patch.replace("\t", "    ")
+            patch = patch.replace("\\n", "\n")
+            patch = patch.strip()
+
+            # Define the regex pattern
+            code_pattern = re.compile(r"```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
+
+            # Find all matches in the patched string
+            # code_matches = re.findall(code_pattern, patch)
+
+            res_string = ""
+            match = re.search(code_pattern, patch)
+            if match:
+                language, code_block = match.groups()
+                fixed_code_block = code_block.lstrip()
+                if language:
+                    fixed_code_block = re.sub(
+                        rf"^{language}", "", fixed_code_block, flags=re.MULTILINE
+                    )
+                res_string += fixed_code_block.strip()
+            return res_string
+
+        ret_responses = []
+        for patches in responses:
+            patches_code = []
+            for patch in patches:
+                code = extract_code_from_patch(patch)
+                patches_code.append(code)
+
+            ret_responses.append(patches_code)
+
+        return ret_responses
 
     @staticmethod
     def format_python_responses(responses: List[List[str]]) -> List[List[str]]:

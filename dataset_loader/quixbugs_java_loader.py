@@ -50,7 +50,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         self.prompts = prompts
 
     def format_code_responses(self, response: List[str]) -> List[str]:
-        return super().format_java_responses(response)
+        return super().format_responses(response)
 
     def run_gradle_test(self, class_name: str) -> (int, int):
         original_dir = os.getcwd()

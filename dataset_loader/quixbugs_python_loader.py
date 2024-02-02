@@ -49,7 +49,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         self.prompts = prompts
 
     def format_code_responses(self, responses: List[List[str]]) -> List[List[str]]:
-        return super().format_python_responses(responses)
+        return super().format_responses(responses)
 
     def run_tests(self, program_path: str, test_id: str) -> (int, int):
         try:
