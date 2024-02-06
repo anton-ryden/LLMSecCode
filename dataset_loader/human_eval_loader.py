@@ -41,7 +41,7 @@ class HumanEvalLoader(DatasetLoader):
         self.prompts = prompts
 
     def format_code_responses(self, responses: List[str]) -> List[str]:
-        return super().format_python_responses(responses)
+        return super().format_responses(responses)
 
     def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -107,8 +107,8 @@ class HumanEvalLoader(DatasetLoader):
         }
         result_list.append(pass_result)
 
-        print("\n")
-        print("pass_at_k: ", pass_at_k)
+        # print("\n")
+        # print("pass_at_k: ", pass_at_k)
         return result_list
 
 
