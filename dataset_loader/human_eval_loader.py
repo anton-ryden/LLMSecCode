@@ -32,7 +32,7 @@ class HumanEvalLoader(DatasetLoader):
             prompt.append(
                 {
                     "role": "user",
-                    "content": f"Complete the following Python code without any tests or explanation\n{entry['prompt']}\n{entry['test']}",
+                    "content": f"Write a Python function `{entry['entry_point']}` to solve the following problem:\n{entry['prompt']}",
                 }
             )
             prompts.append({task_id: prompt})
