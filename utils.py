@@ -82,8 +82,8 @@ def get_summary(model_name: str, model_result: str, configurator):
         for item_dict in dataset_item:
             item = list(item_dict.values())[0]
             dataset_time += item["time_s"]
-            dataset_tokens_generated = item["tokens_generated"]
-            dataset_tokens_sec = item["tokens/s"]
+            dataset_tokens_generated += item["tokens_generated"]
+            dataset_tokens_sec += item["tokens/s"]
             bug_plausable_patch = 0
 
             for patch_dict in item["patches"]:
@@ -114,18 +114,9 @@ def get_summary(model_name: str, model_result: str, configurator):
         model_time += dataset_time
         model_syntax_error += dataset_syntax_error
 
-        pass_1 = estimate_pass_at_k(
-            np.array(dataset_total_list), np.array(dataset_correct_list), 1
+        pass_1, pass_k = get_pass_k(
+            dataset_total_list, dataset_correct_list, configurator.patches_per_bug
         )
-        pass_1 = pass_1.tolist()
-        pass_1 = sum(pass_1) / len(pass_1)
-        pass_k = estimate_pass_at_k(
-            np.array(dataset_total_list),
-            np.array(dataset_correct_list),
-            configurator.patches_per_bug,
-        )
-        pass_k = pass_k.tolist()
-        pass_k = sum(pass_k) / len(pass_k)
         dataset_list[dataset_name] = {
             "Passed tests": dataset_passed,
             "Failed tests": dataset_failed,
@@ -140,18 +131,9 @@ def get_summary(model_name: str, model_result: str, configurator):
             f"new pass@{configurator.patches_per_bug}": pass_k,
         }
     model_summary = {}
-    pass_1 = estimate_pass_at_k(
-        np.array(model_total_list), np.array(model_correct_list), 1
+    pass_1, pass_k = get_pass_k(
+        model_total_list, model_correct_list, configurator.patches_per_bug
     )
-    pass_1 = pass_1.tolist()
-    pass_1 = sum(pass_1) / len(pass_1)
-    pass_k = estimate_pass_at_k(
-        np.array(model_total_list),
-        np.array(model_correct_list),
-        configurator.patches_per_bug,
-    )
-    pass_k = pass_k.tolist()
-    pass_k = sum(pass_k) / len(pass_k)
 
     model_summary[model_name] = {
         "Passed tests": model_passed,
@@ -174,3 +156,17 @@ def get_summary(model_name: str, model_result: str, configurator):
         },
     }
     return model_summary
+
+
+def get_pass_k(total_list, correct_list, patches_per_bug):
+    pass_1 = estimate_pass_at_k(np.array(total_list), np.array(correct_list), 1)
+    pass_1 = pass_1.tolist()
+    pass_1 = sum(pass_1) / len(pass_1)
+    pass_k = estimate_pass_at_k(
+        np.array(total_list),
+        np.array(correct_list),
+        patches_per_bug,
+    )
+    pass_k = pass_k.tolist()
+    pass_k = sum(pass_k) / len(pass_k)
+    return pass_1, pass_k
