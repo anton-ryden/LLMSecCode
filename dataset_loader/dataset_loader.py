@@ -30,7 +30,7 @@ class DatasetLoader(ABC):
 
     @staticmethod
     def format_inst(bug: str, language: str) -> str:
-        return f"""Please repair the buggy function. You are only allowed to modify the given code. Do not provide any explainations. Please return all completed functions in a codeblock. Here is the given code to do repair:
+        return f"""Rewrite this function so that you remove any bug. Please return all completed functions in a codeblock:
 ```{language}
 {bug}
 ```"""
