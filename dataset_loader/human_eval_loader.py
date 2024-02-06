@@ -97,25 +97,8 @@ class HumanEvalLoader(DatasetLoader):
             result_list.append(test_list)
             bug_nr += 1
 
+        print("\n")
         return result_list
-
-
-def cal_pass_at_k(results, k):
-    # Calculate pass@k.
-    total, correct = [], []
-    for result in results.values():
-        passed = [r[1]["passed"] for r in result]
-        total.append(len(passed))
-        correct.append(sum(passed))
-    total = np.array(total)
-    correct = np.array(correct)
-
-    ks = k
-    pass_at_k = []
-    for k in ks:
-        pass_at_k.append(estimate_pass_at_k(total, correct, k))
-
-    return pass_at_k
 
 
 def run_eval(bug_id, patch_id, patch, results):
