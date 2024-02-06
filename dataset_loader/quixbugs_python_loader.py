@@ -112,14 +112,13 @@ class QuixBugsPythonLoader(DatasetLoader):
                     file.write(patch)
 
                 # Check syntax errors and run tests on the program
-                syntax_error = (
-                    super().check_python_syntax(patch)
-                    if patch != ""
-                    else {
+                if patch != "":
+                    syntax_error = super().check_python_syntax(patch)
+                else:
+                    syntax_error = {
                         "syntax_error": "null",
                         "error_message": "Empty file, could not extract any code",
                     }
-                )
 
                 if syntax_error["syntax_error"] == False:
                     failed_count, passed_count = self.run_tests(program_path, test_id)
