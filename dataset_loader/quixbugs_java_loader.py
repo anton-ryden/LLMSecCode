@@ -1,21 +1,36 @@
-from typing import List, Dict
+from typing import Tuple
 import os
 import copy
 import logging
 import re
 import subprocess
+
 from dataset_loader.dataset_loader import DatasetLoader
-from utils import print_progress_bar
+from patch_tracker.patch import Patch
+from patch_tracker.bug import Bug
 
 
 class QuixBugsJavaLoader(DatasetLoader):
+    """
+    Class for loading and testing the dataset QuixBugs Java.
+    """
+
     def __init__(self) -> None:
+        """
+        Initialize the QuixBugsPythonLoader.
+        """
         super().__init__()
         self.name = "QuixBugs Java"
 
-    def load_prompts(self) -> List[List[Dict[str, str]]]:
+    def load_prompts(self, max_chain_depth: int, patches_per_bug: int) -> None:
+        """
+        Load prompts for QuixBugs Python dataset.
+
+        :param max_chain_depth: Maximum chain depth.
+        :param patches_per_bug: Number of patches per bug.
+        """
         print("Loading " + self.name + " prompts...")
-        prompts = []
+        bugs = []
 
         # Receive prompt and inst from DatasetLoader
         system_prompt = self.system_prompt
@@ -40,23 +55,28 @@ class QuixBugsJavaLoader(DatasetLoader):
                             }
                         )
                         new_file_name = file_name.split(".")[0] + ".java"
-                        prompts.append({new_file_name: prompt})
+                        bugs.append(
+                            Bug(new_file_name, prompt, max_chain_depth, patches_per_bug)
+                        )
                 else:
                     logging.error(f"'{file_path_full}' is not a file.")
             except Exception as e:
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
         print(self.name + " prompts loaded\n")
-        self.prompts = prompts
+        self.bugs = bugs
 
-    def format_code_responses(self, response: List[str]) -> List[str]:
-        return super().format_responses(response)
+    def run_gradle_test(self, class_name: str) -> Tuple[int, int]:
+        """
+        Run Gradle tests for a specified Java class.
 
-    def run_gradle_test(self, class_name: str) -> (int, int):
+        :param class_name: The name of the Java class to run tests for.
+        :return: A tuple containing the number of passed tests and the number of failed tests.
+        """
         original_dir = os.getcwd()
         quixbugs_dir = "./QuixBugs/"
-        failed_tests_count = 0
-        passed_tests_count = 0
+        failed_tests = 0
+        passed_tests = 0
 
         try:
             if "QuixBugs" not in os.getcwd():
@@ -92,8 +112,8 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                 if match:
                     tests_completed = int(match.group(1))
-                    failed_tests_count = int(match.group(2))
-                    passed_tests_count = tests_completed - failed_tests_count
+                    failed_tests = int(match.group(2))
+                    passed_tests = tests_completed - failed_tests
 
                 elif match2:
                     # If the second pattern is found, open the corresponding JSON file
@@ -103,9 +123,7 @@ class QuixBugsJavaLoader(DatasetLoader):
                     if os.path.exists(json_file_path):
                         with open(json_file_path, "r") as json_file:
                             # Read the number of lines in the JSON file thats not empty
-                            passed_tests_count = sum(
-                                1 for line in json_file if line.strip()
-                            )
+                            passed_tests = sum(1 for line in json_file if line.strip())
                     else:
                         test_file_path = (
                             f"./QuixBugs/java_testcases/junit/{class_name}_TEST.java"
@@ -115,79 +133,56 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                         # Get the number of @Test in test code
                         test_instances = re.findall(r"@Test", java_code)
-                        passed_tests_count = len(test_instances)
+                        passed_tests = len(test_instances)
 
         except subprocess.TimeoutExpired:
-            # Handle timeout and kill the pytest subprocess
-            failed_tests_count = "null"
-            passed_tests_count = "null"
             subprocess.run(["pkill", "-f", gradle_command])
         except Exception as e:
             # Handle any other unexpected exceptions
             logging.error(e)
-            failed_tests_count = "null"
-            passed_tests_count = "null"
             subprocess.run(["pkill", "-f", gradle_command])
 
         os.chdir(original_dir)
-        return passed_tests_count, failed_tests_count
+        return passed_tests, failed_tests
 
-    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
+    def test_code(self, patch: Patch) -> None:
+        """
+        Test the provided patch.
+
+        :param patch: Patch object.
+        """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        result_list = []
-        bug_nr = 0
         dynamic_directory = "./QuixBugs/java_programs"
 
         try:
-            print("Starting testing for: " + self.name)
-            for test_id, bugs in zip(ids, patch_list):
-                test_list = []
-                for patch_nr, patch in enumerate(bugs, start=1):
-                    dynamic_file_path = os.path.join(dynamic_directory, test_id)
+            dynamic_file_path = os.path.join(dynamic_directory, patch.id)
 
-                    with open(dynamic_file_path, "w") as file:
-                        file.write(patch)
+            with open(dynamic_file_path, "w") as file:
+                file.write(patch.code)
 
-                    class_name = test_id.split(".")[0]
-                    syntax_error = None
-                    if patch != "":
-                        syntax_error = super().check_java_syntax(dynamic_file_path)
-                    else:
-                        syntax_error = {
-                            "syntax_error": "null",
-                            "error_message": "Empty file, could not extract any code",
-                        }
+            class_name = patch.id.split(".")[0]
+            if patch.code != "":
+                patch.syntax_error, patch.error_message = super().check_java_syntax(
+                    dynamic_file_path
+                )
+            else:
+                patch.other_error = True
+                patch.error_message = "Empty file, could not extract any code"
 
-                    if syntax_error["syntax_error"] != True:
-                        passed_count, failed_count = self.run_gradle_test(class_name)
-                    else:
-                        passed_count, failed_count = "null", "null"
+            if patch.syntax_error != True and patch.other_error != True:
+                patch.passed, patch.failed = self.run_gradle_test(class_name)
 
-                    test_run_info = {
-                        "TestProgramName": test_id,
-                        "Passed": passed_count,
-                        "Failed": failed_count,
-                    }
-                    test_list.append({**test_run_info, **syntax_error})
+            before = ""
+            file_path = os.path.join(
+                "./QuixBugs/java_programs_bug", patch.id.split(".")[0] + ".txt"
+            )
 
-                    before = ""
-                    file_path = os.path.join(
-                        "./QuixBugs/java_programs_bug", test_id.split(".")[0] + ".txt"
-                    )
-                    with open(file_path, "r") as file:
-                        before = file.read()
+            # Overwrite to original state, if this is not done is could introduce errors for other patches.
+            with open(file_path, "r") as file:
+                before = file.read()
 
-                    with open(dynamic_file_path, "w") as file:
-                        file.write(before)
+            with open(dynamic_file_path, "w") as file:
+                file.write(before)
 
-                    print_progress_bar(
-                        len(bugs) * bug_nr + patch_nr,
-                        len(ids) * len(bugs),
-                    )
-
-                result_list.append(test_list)
-                bug_nr += 1
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        print("\n")
-        return result_list

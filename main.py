@@ -3,7 +3,10 @@ from typing import List, Dict
 from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
-from utils import write_dict_to_json, get_summary
+from utils import save_json, print_progress_bar
+from patch_tracker.dataset_store import DatasetStore
+from patch_tracker.bug import Bug
+from patch_tracker.patch import Patch
 
 
 def evaluate_models_on_datasets(
@@ -16,7 +19,7 @@ def evaluate_models_on_datasets(
 
     :param model_loaders: List of ModelLoader instances.
     :param dataset_loaders: List of DatasetLoader instances.
-    :param results_dir: Str name of folder to save results to.
+    :param configurator: Configurator instance.
     :return: List of dictionaries containing evaluation results for each model on each dataset.
     """
     evaluation_results = []
@@ -25,25 +28,11 @@ def evaluate_models_on_datasets(
     for model_loader in model_loaders:
         model_loader.load_model_tokenizer()
 
-        model_result = evaluate_single_model_on_datasets(model_loader, dataset_loaders)
+        model_result = evaluate_single_model_on_datasets(
+            model_loader, dataset_loaders, configurator
+        )
         # Append results for the current model
         evaluation_results.append({model_loader.name: model_result})
-
-        # Write model results to json file
-        write_dict_to_json(
-            {model_loader.name: model_result},
-            "./results/" + configurator.results_dir + "/" + model_loader.name + ".json",
-        )
-
-        summary = get_summary(model_loader.name, model_result, configurator)
-        write_dict_to_json(
-            summary,
-            "./results/"
-            + configurator.results_dir
-            + "/summary_"
-            + model_loader.name
-            + ".json",
-        )
 
         # Unload model and tokenizer from memory
         model_loader.unload_model_tokenizer()
@@ -52,26 +41,48 @@ def evaluate_models_on_datasets(
 def evaluate_single_model_on_datasets(
     model_loader: ModelLoader,
     dataset_loaders: List[DatasetLoader],
+    configurator: Configurator,
 ) -> List[Dict]:
     """
     Evaluate a model loader on multiple dataset loaders.
 
     :param model_loader: Instance of ModelLoader.
     :param dataset_loaders: List of DatasetLoader instances.
+    :param configurator: Configurator instance.
     :return: List of dictionaries containing evaluation results for the model on each dataset.
     """
     model_evaluation_results = []
-
     # Iterate over each dataset loader
     for dataset_loader in dataset_loaders:
         # Load prompts
-        dataset_loader.load_prompts()
-
-        formatted_dataset_result = evaluate_single_model_on_dataset(
-            model_loader, dataset_loader
+        dataset_loader.load_prompts(
+            configurator.max_chain_depth, configurator.patches_per_bug
         )
-        # Append results for the current dataset
-        model_evaluation_results.append({dataset_loader.name: formatted_dataset_result})
+
+        # Create the objects to store the info
+        dataset_store = DatasetStore(
+            dataset_loader.name, configurator.max_chain_depth, dataset_loader.bugs
+        )
+
+        evaluate_single_model_on_dataset(
+            model_loader, dataset_loader, dataset_store, configurator.max_chain_depth
+        )
+
+        dataset_store.update_stats()
+
+        # Save results
+        save_json(
+            dataset_store.to_brief_summary_json(configurator),
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/brief_summary.json",
+        )
+        save_json(
+            dataset_store.to_summary_json(configurator),
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/summary.json",
+        )
+        save_json(
+            dataset_store.to_detailed_json(),
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/detailed.json",
+        )
 
     return model_evaluation_results
 
@@ -79,39 +90,110 @@ def evaluate_single_model_on_datasets(
 def evaluate_single_model_on_dataset(
     model_loader: ModelLoader,
     dataset_loader: DatasetLoader,
-) -> List[Dict]:
+    dataset_store: DatasetStore,
+    max_chain_depth: int,
+) -> None:
     """
     Evaluate a model loader on a single dataset loader.
 
     :param model_loader: Instance of ModelLoader.
     :param dataset_loader: Instance of DatasetLoader.
-    :return: List of dictionaries containing evaluation results for the model on the dataset.
+    :param dataset_store: Instance of DatasetStore.
+    :param max_chain_depth: Maximum chain depth.
     """
-    # Generate model responses and timing
-    responses, tot_time = model_loader.generate_answers(dataset_loader)
+    for depth in range(1, max_chain_depth + 1):
+        patches = []
+        if depth == 1:
+            for bug in dataset_store.bugs:
+                patches.extend(bug.patches[1])
+        else:
+            patches = get_failed_patches(dataset_store.bugs, depth)
 
-    # Get ids and prompt in lists
-    ids, prompts = [], []
-    for data_dict in dataset_loader.prompts:
-        for key, value in data_dict.items():
-            ids.append(key)
-            prompts.append(value)
+        generate_answers(patches, depth, dataset_loader, model_loader)
 
-    # Format responses and extract code
-    no_instruction = model_loader.format_responses(prompts, responses)
-    only_code = dataset_loader.format_code_responses(no_instruction)
+        test_answers(patches, depth, dataset_loader)
 
-    test_result = dataset_loader.test_code(ids, only_code)
+    print()
 
-    # Get tokens generated
-    tokens_generated = model_loader.get_tokens_generated(no_instruction)
 
-    # Format patches
-    formatted_patches = dataset_loader.format_patches(
-        no_instruction, ids, prompts, only_code, tot_time, tokens_generated, test_result
-    )
+def generate_answers(
+    patches: List[Patch],
+    depth: int,
+    dataset_loader: DatasetLoader,
+    model_loader: ModelLoader,
+):
+    """
+    Generate answers for a given set of patches.
 
-    return formatted_patches
+    :param patches: List of patches.
+    :param depth: Depth of the chain..
+    :param dataset_loader: Instance of DatasetLoader.
+    :param model_loader: Instance of ModelLoader.
+    """
+    if len(patches) == 0:
+        return
+
+    if depth == 1:
+        print(f"Generating answers for dataset: {dataset_loader.name}")
+    else:
+        print(f"Generating answers Chain-Of-Thought nr: {depth}")
+    print_progress_bar(0, len(patches))
+    for i, patch in enumerate(patches, start=1):
+        # Generate model responses and timing
+        patch.llm_resp, patch.time_to_gen = model_loader.prompt_llm(patch.prompt)
+
+        # Format responses and extract code
+        patch.llm_resp_clean = model_loader.clean_response(patch.prompt, patch.llm_resp)
+        patch.code = dataset_loader.extract_code(patch.llm_resp_clean)
+
+        # Update tokens generated
+        patch.tokens_generated = model_loader.get_tokens_generated(patch.llm_resp_clean)
+
+        print_progress_bar(i, len(patches))
+    print()
+
+
+def test_answers(patches: List[Patch], depth: int, dataset_loader: DatasetLoader):
+    """
+    Test answers for a given set of patches.
+
+    :param patches: List of patches.
+    :param depth: Depth of the chain.
+    :param dataset_loader: Instance of DatasetLoader.
+    """
+    if len(patches) == 0:
+        return
+
+    if depth == 1:
+        print(f"Testing answers for dataset: {dataset_loader.name}")
+    else:
+        print(f"Testing answers Chain-Of-Thougth nr: {depth}")
+
+    print_progress_bar(0, len(patches))
+    for i, patch in enumerate(patches, start=1):
+        dataset_loader.test_code(patch)
+
+        print_progress_bar(i, len(patches))
+    print()
+
+
+def get_failed_patches(bugs: list[Bug], depth: int) -> List[Patch]:
+    """
+    Get failed patches for a given depth.
+
+    :param bugs: List of bugs.
+    :param depth: Depth of the chain.
+    :return: List of failed patches.
+    """
+    patches = []
+    for bug in bugs:
+        for patch in bug.patches[depth - 1]:
+            if patch.failed > 0 or patch.syntax_error or patch.other_error:
+                next_patch = patch.get_next_chain()
+                bug.add_patch(next_patch)
+                patches.append(next_patch)
+
+    return patches
 
 
 if __name__ == "__main__":

@@ -14,10 +14,11 @@ class Configurator:
         # Default configuration values
         self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
-        self.patches_per_bug = 4
-        self.max_length = 4096
+        self.patches_per_bug = 1
+        self.max_length = 1000
         self.temperature = 0.8
         self.top_p = 0.95
+        self.max_chain_depth = 2
         self.datasets = ["quixbugs-python"]
         self.chat_template = ""
         self.results_dir = "default"
@@ -46,13 +47,13 @@ class Configurator:
             "--patches_per_bug",
             type=int,
             default=self.patches_per_bug,
-            help="The number of patches to generate per bug",
+            help="The number of patches to generate per bug.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--max_length",
             type=int,
             default=self.max_length,
-            help="The maximum lengt of the resposne from the model.\n Default is %(default)s.",
+            help="The maximum lengt of the response from the model.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--temperature",
@@ -65,6 +66,12 @@ class Configurator:
             type=int,
             default=self.top_p,
             help="Top p, also known as nucleus sampling, is another hyperparameter that controls the randomness of language model output. It sets a threshold probability and selects the top tokens whose cumulative probability exceeds the threshold.\n Default is %(default)s.",
+        )
+        parser.add_argument(
+            "--max_chain_depth",
+            type=int,
+            default=self.max_chain_depth,
+            help="The maximum number of tries per patch. If a patch is not correct the model gets a new try. The amount of tries is specified by this value. Value should be >= 1\n Default is %(default)s.",
         )
         parser.add_argument(
             "--datasets",

@@ -1,42 +1,71 @@
-from typing import List, Dict
-from abc import ABC, abstractmethod
 import os
 import re
 import subprocess
+from abc import ABC, abstractmethod
+from typing import Tuple
+
+from patch_tracker.patch import Patch
 
 
 class DatasetLoader(ABC):
+    """
+    Abstract base class for dataset loaders.
+    """
+
     def __init__(self) -> None:
+        """
+        Initialize the DatasetLoader.
+        """
         self.system_prompt = [
             {
                 "role": "system",
                 "content": "You are a coding assistant.",
             }
         ]
-        self.prompts = []
+        self.bugs = []
         self.name = ""
 
     @abstractmethod
-    def load_prompts(self) -> List[List[Dict[str, str]]]:
+    def load_prompts(self, max_chain_depth: int, patches_per_bug: int) -> None:
+        """
+        Abstract method to load prompts for dataset.
+
+        :param max_chain_depth: Maximum chain depth.
+        :param patches_per_bug: Number of patches per bug.
+        """
         pass
 
     @abstractmethod
-    def format_code_responses(self, response: str) -> None:
-        pass
+    def test_code(self, patch: Patch) -> None:
+        """
+        Abstract method to test code patches.
 
-    @abstractmethod
-    def test_code(self, ids: List[str], patch_list: List[List[str]]) -> List[Dict]:
+        :param patch: The patch to test.
+        """
         pass
 
     @staticmethod
     def format_inst(bug: str, language: str) -> str:
+        """
+        Format instruction for a given bug.
+
+        :param bug: The bug code.
+        :param language: The programming language of the bug code.
+        :return: Formatted instruction string.
+        """
         return f"""Rewrite this function so that you remove any bug. Please return all completed functions in a codeblock:
 ```{language}
 {bug}
 ```"""
 
     @staticmethod
-    def check_python_syntax(code: str) -> dict:
+    def check_python_syntax(code: str) -> Tuple[bool, str]:
+        """
+        Check Python syntax errors in code.
+
+        :param code: The Python code to check.
+        :return: Tuple indicating whether a syntax error occurred (bool) and the corresponding error message (str).
+        """
         error_message = ""
         syntax_error = False
         try:
@@ -60,154 +89,40 @@ class DatasetLoader(ABC):
             error_message += f"{type(e).__name__}: {e}\n"
             syntax_error = True
 
-        return {"syntax_error": syntax_error, "error_message": error_message}
+        return syntax_error, error_message
 
     @staticmethod
-    def format_responses(responses: List[List[str]]) -> List[List[str]]:
-        def extract_code_from_patch(patch: str) -> str:
-            patch = patch.replace("\t", "    ")
-            patch = patch.replace("\\n", "\n")
-            patch = patch.strip()
+    def extract_code(llm_resp_clean: str) -> str:
+        """
+        Extract code from cleaned response.
 
-            # Define the regex pattern
-            code_pattern = re.compile(r"```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
+        :param llm_resp_clean: The cleaned response containing code.
+        :return: Extracted code.
+        """
+        # Define the regex pattern
+        code_pattern = re.compile(r"```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
 
-            # Find all matches in the patched string
-            # code_matches = re.findall(code_pattern, patch)
-
-            res_string = ""
-            match = re.search(code_pattern, patch)
-            if match:
-                language, code_block = match.groups()
-                fixed_code_block = code_block.lstrip()
-                if language:
-                    fixed_code_block = re.sub(
-                        rf"^{language}", "", fixed_code_block, flags=re.MULTILINE
-                    )
-                res_string += fixed_code_block.strip()
-            return res_string
-
-        ret_responses = []
-        for patches in responses:
-            patches_code = []
-            for patch in patches:
-                code = extract_code_from_patch(patch)
-                patches_code.append(code)
-
-            ret_responses.append(patches_code)
-
-        return ret_responses
+        # Find all matches in the patched string
+        res_string = ""
+        match = re.search(code_pattern, llm_resp_clean)
+        if match:
+            language, code_block = match.groups()
+            fixed_code_block = code_block.lstrip()
+            if language:
+                fixed_code_block = re.sub(
+                    rf"^{language}", "", fixed_code_block, flags=re.MULTILINE
+                )
+            res_string += fixed_code_block.strip()
+        return res_string
 
     @staticmethod
-    def format_python_responses(responses: List[List[str]]) -> List[List[str]]:
-        def extract_code_from_patch(patch: str) -> str:
-            patch = patch.replace("\t", "    ")
-            patch = patch.replace("\\n", "\n")
-            patch = patch.strip()
-            # Define the regex pattern
-            pattern = re.compile(r"\b(?:import|from|def)\b|\w*(?:import|from|def)\w*")
+    def check_java_syntax(file_path: str) -> Tuple[bool, str]:
+        """
+        Check Java syntax errors in code.
 
-            # Find all matches in the patched string
-            matches = pattern.finditer(patch)
-
-            # Extract the start index of each match and store them in a list
-            function_indices = [match.start() for match in matches]
-            function_indices.sort()
-
-            for i, function_index in enumerate(function_indices):
-                temp = patch[function_index:]
-
-                lines = temp.split("\n")
-                line_end_index = 0
-                for i, line in enumerate(lines[1:]):
-                    pattern2 = re.compile(r"\b(import|from|def)\b")
-                    if pattern2.search(line):
-                        continue
-                    if len(line) > 0 and line[0] != " ":
-                        for j in range(i + 1):
-                            line_end_index += len(lines[j]) + 1
-
-                        return patch[function_index : function_index + line_end_index]
-
-                return patch[function_index:]
-
-            return ""
-
-        ret_responses = []
-        for patches in responses:
-            patches_code = []
-            for patch in patches:
-                code = extract_code_from_patch(patch)
-                patches_code.append(code)
-
-            ret_responses.append(patches_code)
-
-        return ret_responses
-
-    @staticmethod
-    def format_java_responses(responses: List[List[str]]) -> List[List[str]]:
-        ret_responses = []
-
-        # Regular expressions to match various Java code patterns
-        start_pattern = re.compile(
-            r"\b(?:package|class|public|private|protected|void)\b"
-        )
-        end_pattern = re.compile(
-            r"\b(?:}\s*//\s*end\sof\s+class\b|}\s*//\s*end\sof\s+method\b)\b"
-        )
-
-        for patches in responses:
-            patches_code = []
-            for patch in patches:
-                # Find the first match of the start pattern in the string
-                start_match = start_pattern.search(patch)
-
-                if start_match:
-                    # Extract code starting from the match
-                    start_index = start_match.start()
-                    code_start = patch[start_index:]
-
-                    # Find the first match of the end pattern after the start
-                    end_match = end_pattern.search(code_start)
-
-                    if end_match:
-                        # Extract code up to the end match
-                        end_index = end_match.start()
-                        java_code_cleaned = code_start[:end_index]
-                        # Check for triple backticks and remove content after them
-                        triple_backticks_index = java_code_cleaned.find("```")
-                        if triple_backticks_index != -1:
-                            java_code_cleaned = java_code_cleaned[
-                                :triple_backticks_index
-                            ]
-                        patches_code.append(java_code_cleaned)
-                    else:
-                        java_code_cleaned = code_start
-                        # Check for triple backticks and remove content after them
-                        triple_backticks_index = java_code_cleaned.find("```")
-                        if triple_backticks_index != -1:
-                            java_code_cleaned = java_code_cleaned[
-                                :triple_backticks_index
-                            ]
-                        patches_code.append(java_code_cleaned)
-                        # If no end match found, keep the original code
-                        # patches_code.append(code_start)
-                else:
-                    java_code_cleaned = patch
-                    # Check for triple backticks and remove content after them
-                    triple_backticks_index = java_code_cleaned.find("```")
-                    if triple_backticks_index != -1:
-                        java_code_cleaned = java_code_cleaned[:triple_backticks_index]
-                    patches_code.append(java_code_cleaned)
-                    # If no start match found, keep the original patch
-                    # patches_code.append(patch)
-
-            ret_responses.append(patches_code)
-
-        return ret_responses
-
-    @staticmethod
-    def check_java_syntax(file_path: str) -> dict:
+        :param filepath: The location of the java code.
+        :return: Tuple indicating whether a syntax error occurred (bool) and the corresponding error message (str).
+        """
         error_message = ""
         syntax_error = False
         line_number = None
@@ -252,70 +167,7 @@ class DatasetLoader(ABC):
             # Check if stderr is not None before decoding
             if e.stderr is not None:
                 error_message += e.stderr
-
-                # Extract line number from the error message
-                match = re.search(r"error:.*:(\d+):", e.stderr)
-                if match:
-                    line_number = int(match.group(1))
-
             else:
                 error_message += "No stderr output available."
 
-        return {
-            "syntax_error": syntax_error,
-            "error_message": error_message,
-            "line_number": line_number,
-        }
-
-    @staticmethod
-    def format_patches(
-        responses: List[List[str]],
-        ids: List[str],
-        prompts: List[List[dict]],
-        patches: List[List[str]],
-        tot_time: List[float],
-        tokens_generated: List[float],
-        test_result_list: List[Dict],
-    ) -> List[dict]:
-        bugs = []
-
-        if len(test_result_list) > len(ids):
-            bugs.append(test_result_list[-1])
-
-        for response, id, prompt, patch, time, tokens, test_result_1 in zip(
-            responses,
-            ids,
-            prompts,
-            patches,
-            tot_time,
-            tokens_generated,
-            test_result_list,
-        ):
-            bugs.append(
-                {
-                    id: {
-                        "response": response,
-                        "prompt": prompt,
-                        "patches": format_patch(patch, test_result_1),
-                        "time_s": time,
-                        "tokens_generated": tokens,
-                        "tokens/s": tokens / time,
-                    }
-                }
-            )
-
-        return bugs
-
-
-def format_patch(patches: List[List[str]], test_result_list: List[Dict]) -> List[dict]:
-    patch_list = []
-
-    for patch, test_result in zip(patches, test_result_list):
-        patch_list.append(
-            {
-                "patch": patch,
-                "test_result": test_result,
-            }
-        )
-
-    return patch_list
+        return syntax_error, error_message
