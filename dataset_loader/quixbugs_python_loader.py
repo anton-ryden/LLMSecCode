@@ -38,9 +38,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         python_directory = "./QuixBugs/python_programs_bug"
         python_file_list = os.listdir(python_directory)
 
-        for i, file_name in enumerate(python_file_list):
-            if i == 2:
-                break
+        for file_name in python_file_list:
             try:
                 file_path = os.path.join(python_directory, file_name)
                 if os.path.isfile(file_path):

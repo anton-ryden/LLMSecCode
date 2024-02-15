@@ -17,14 +17,14 @@ class DatasetStore:
         self.name = name
         self.max_chain_depth = max_chain_depth
         self.bugs = bugs
-        self.syntax_errors = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.other_errors = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.time_s = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.tokens_generated = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.passed = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.failed = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.num_patches = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.correct = {depth: 0 for depth in range(max_chain_depth + 1)}
+        self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
+        self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
+        self.time_s = {depth: 0 for depth in range(max_chain_depth)}
+        self.tokens_generated = {depth: 0 for depth in range(max_chain_depth)}
+        self.passed = {depth: 0 for depth in range(max_chain_depth)}
+        self.failed = {depth: 0 for depth in range(max_chain_depth)}
+        self.num_patches = {depth: 0 for depth in range(max_chain_depth)}
+        self.correct = {depth: 0 for depth in range(max_chain_depth)}
 
     def update_stats(self):
         """
@@ -33,7 +33,7 @@ class DatasetStore:
         for bug in self.bugs:
             bug.update_stats()
 
-            for depth in range(1, bug.max_chain_depth + 1):
+            for depth in range(bug.max_chain_depth):
                 self.syntax_errors[depth] += bug.syntax_errors[depth]
                 self.other_errors[depth] += bug.other_errors[depth]
                 self.time_s[depth] += bug.time_to_gen[depth]
@@ -71,7 +71,7 @@ class DatasetStore:
                 "Correct": self.correct[depth],
                 "Amount of patches": self.num_patches[depth],
             }
-            for depth in range(self.max_chain_depth + 1)
+            for depth in range(self.max_chain_depth)
             if any(
                 [
                     self.syntax_errors[depth],

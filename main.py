@@ -101,11 +101,11 @@ def evaluate_single_model_on_dataset(
     :param dataset_store: Instance of DatasetStore.
     :param max_chain_depth: Maximum chain depth.
     """
-    for depth in range(1, max_chain_depth + 1):
+    for depth in range(max_chain_depth):
         patches = []
-        if depth == 1:
+        if depth == 0:
             for bug in dataset_store.bugs:
-                patches.extend(bug.patches[1])
+                patches.extend(bug.patches[0])
         else:
             patches = get_failed_patches(dataset_store.bugs, depth)
 
@@ -133,11 +133,12 @@ def generate_answers(
     if len(patches) == 0:
         return
 
-    if depth == 1:
+    if depth == 0:
         print(f"Generating answers for dataset: {dataset_loader.name}")
     else:
         print(f"Generating answers Chain-Of-Thought nr: {depth}")
     print_progress_bar(0, len(patches))
+
     for i, patch in enumerate(patches, start=1):
         # Generate model responses and timing
         patch.llm_resp, patch.time_to_gen = model_loader.prompt_llm(patch.prompt)
@@ -164,7 +165,7 @@ def test_answers(patches: List[Patch], depth: int, dataset_loader: DatasetLoader
     if len(patches) == 0:
         return
 
-    if depth == 1:
+    if depth == 0:
         print(f"Testing answers for dataset: {dataset_loader.name}")
     else:
         print(f"Testing answers Chain-Of-Thougth nr: {depth}")

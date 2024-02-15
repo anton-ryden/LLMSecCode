@@ -22,17 +22,17 @@ class Bug:
         self.id = id
         self.prompt = prompt
         self.max_chain_depth = max_chain_depth
-        self.syntax_errors = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.other_errors = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.time_to_gen = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.tokens_generated = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.passed = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.failed = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.patches = [[] for _ in range(max_chain_depth + 1)]
-        self.num_patches = {depth: 0 for depth in range(max_chain_depth + 1)}
-        self.correct = {depth: 0 for depth in range(max_chain_depth + 1)}
+        self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
+        self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
+        self.time_to_gen = {depth: 0 for depth in range(max_chain_depth)}
+        self.tokens_generated = {depth: 0 for depth in range(max_chain_depth)}
+        self.passed = {depth: 0 for depth in range(max_chain_depth)}
+        self.failed = {depth: 0 for depth in range(max_chain_depth)}
+        self.patches = [[] for _ in range(max_chain_depth)]
+        self.num_patches = {depth: 0 for depth in range(max_chain_depth)}
+        self.correct = {depth: 0 for depth in range(max_chain_depth)}
 
-        p = Patch(id, prompt, 1)
+        p = Patch(id, prompt, 0)
         for _ in range(patches_per_bug):
             self.add_patch(copy.copy(p))
 
@@ -67,7 +67,7 @@ class Bug:
         :return: Detailed JSON representation of the bug.
         """
         patches = []
-        for depth in range(self.max_chain_depth + 1):
+        for depth in range(self.max_chain_depth):
             for patch in self.patches[depth]:
                 if patch != []:
                     patches.append(patch.detailed_json())
@@ -90,7 +90,7 @@ class Bug:
                 "Failed": self.failed[depth],
                 "Correct": self.correct[depth],
             }
-            for depth in range(self.max_chain_depth + 1)
+            for depth in range(self.max_chain_depth)
             if any(
                 [
                     self.syntax_errors[depth],
