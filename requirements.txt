@@ -2,4 +2,5 @@ transformers==4.36.2
 torch==2.1.2
 auto-gptq==0.6.0
 pytest==6.2.5
+optimum
 human-eval
