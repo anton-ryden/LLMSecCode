@@ -32,9 +32,27 @@ class Patch:
         """
         new_prompt = copy.deepcopy(self.prompt)
         new_prompt.append({"role": "assistant", "content": self.code})
-        new_prompt.append(
-            {"role": "user", "content": "It is not quite correct, try again."}
-        )
+        if self.syntax_error:
+            new_prompt.append(
+                {
+                    "role": "user",
+                    "content": f"The code you provided contain a syntax error. The syntax error: {self.error_message}\nChange the code and return a updated version in a codeblock",
+                }
+            )
+        elif self.other_error:
+            new_prompt.append(
+                {
+                    "role": "user",
+                    "content": f"The code you provided caused an error. The error: {self.error_message}\nChange the code and return a updated version in a codeblock",
+                }
+            )
+        else:
+            new_prompt.append(
+                {
+                    "role": "user",
+                    "content": f"The code passed {self.passed} and failed {self.failed} test. Change the code and return a updated version in a codeblock",
+                }
+            )
         return Patch(self.id, new_prompt, self.chain_depth + 1)
 
     def detailed_json(self):
