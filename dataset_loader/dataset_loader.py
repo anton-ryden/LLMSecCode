@@ -100,7 +100,7 @@ class DatasetLoader(ABC):
         :return: Extracted code.
         """
         # Define the regex pattern
-        code_pattern = re.compile(r"```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
+        code_pattern = re.compile(r"\n?```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
 
         # Find all matches in the patched string
         res_string = ""
@@ -113,6 +113,15 @@ class DatasetLoader(ABC):
                     rf"^{language}", "", fixed_code_block, flags=re.MULTILINE
                 )
             res_string += fixed_code_block.strip()
+        else:
+            llm_resp_clean = re.sub(
+                r"(<\s>)$", "", llm_resp_clean, flags=re.MULTILINE
+            )
+            llm_resp_clean = re.sub(
+                r"```", "", llm_resp_clean, flags=re.MULTILINE
+            )
+            return llm_resp_clean
+        
         return res_string
 
     @staticmethod

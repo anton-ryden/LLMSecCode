@@ -28,13 +28,13 @@ class DatasetStore:
         self.failed = {depth: 0 for depth in range(max_chain_depth)}
         self.num_patches = {depth: 0 for depth in range(max_chain_depth)}
         self.correct = {depth: 0 for depth in range(max_chain_depth)}
-        self.passAtK = [np.array([]) for _ in range(max_chain_depth)]
+        self.pass_at_k = np.array([])
 
     def update_stats(self):
         """
         Update statistics for each bug in the dataset.
         """
-        total_patches, correct_patches = [[] for _ in range(self.max_chain_depth)], [[] for _ in range(self.max_chain_depth)]
+        total_patches, correct_patches = [], []
         for bug in self.bugs:
             bug.update_stats()
 
@@ -47,13 +47,12 @@ class DatasetStore:
                 self.failed[depth] += bug.failed[depth]
                 self.num_patches[depth] += bug.num_patches[depth]
                 self.correct[depth] += bug.correct[depth]
-                if bug.patches[depth]:
-                    total_patches[depth].append(bug.num_patches[depth])
-                    correct_patches[depth].append(bug.correct[depth])
+                if bug.patches[depth] and depth == 0:
+                    total_patches.append(bug.num_patches[depth])
+                    correct_patches.append(bug.correct[depth])
 
-        for depth in range(self.max_chain_depth):
-            k = max(total_patches[depth])
-            self.passAtK[depth] = get_pass_k(total_patches[depth], correct_patches[depth], k)
+        k = max(total_patches)
+        self.pass_at_k = get_pass_k(total_patches, correct_patches, k)
 
     def to_detailed_json(self):
         """
@@ -82,8 +81,9 @@ class DatasetStore:
                 "Failed": self.failed[depth],
                 "Correct": self.correct[depth],
                 "Amount of patches": self.num_patches[depth],
-                "Pass@1": self.passAtK[depth][0],
-                f"Pass@{conf.patches_per_bug}": self.passAtK[depth][1],
+                "Success Rate": round((self.correct[depth]/self.num_patches[depth])*100, 1) if depth > 0 else None,
+                "Pass@1": round(self.pass_at_k[0]*100, 1) if depth == 0 else None,
+                f"Pass@{conf.patches_per_bug}": round(self.pass_at_k[1]*100, 1) if depth == 0 else None,
             }
             for depth in range(self.max_chain_depth)
             if any(
@@ -96,11 +96,14 @@ class DatasetStore:
                     self.failed[depth],
                     self.correct[depth],
                     self.num_patches[depth],
-                    self.passAtK[depth][0],
-                    self.passAtK[depth][1]
+                    self.pass_at_k[0],
+                    self.pass_at_k[1]
                 ]
             )
         }
+
+        statistics = {depth: {k: v for k, v in stats.items() if v is not None} for depth, stats in statistics.items()}
+
         return {
             "Name": self.name,
             "Statistics": statistics,
@@ -121,7 +124,7 @@ class DatasetStore:
         total_failed = sum(self.failed.values())
         total_correct = sum(self.correct.values())
         amount_of_patches = sum(self.num_patches.values())
-        pass_at_1 = self.passAtK[0][0]
+        pass_at_1 = round(self.pass_at_k[0]*100, 1)
 
         return {
             "Syntax errors": total_syntax_errors,

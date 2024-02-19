@@ -108,6 +108,7 @@ def evaluate_single_model_on_dataset(
                 patches.extend(bug.patches[0])
         else:
             patches = get_failed_patches(dataset_store.bugs, depth)
+            model_loader.max_length = (depth+1) * model_loader.max_length
 
         generate_answers(patches, depth, dataset_loader, model_loader)
 

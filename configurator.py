@@ -14,11 +14,11 @@ class Configurator:
         # Default configuration values
         self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
-        self.patches_per_bug = 1
+        self.patches_per_bug = 2
+        self.max_chain_depth = 2
         self.max_length = 1000
         self.temperature = 0.8
         self.top_p = 0.95
-        self.max_chain_depth = 2
         self.datasets = ["quixbugs-python"]
         self.chat_template = ""
         self.results_dir = "default"

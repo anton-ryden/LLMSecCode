@@ -50,7 +50,7 @@ class Patch:
             new_prompt.append(
                 {
                     "role": "user",
-                    "content": f"The code passed {self.passed} and failed {self.failed} test. Change the code and return a updated version in a codeblock",
+                    "content": f"The code did not pass all test cases. Improve the code and return a updated version in a codeblock",
                 }
             )
         return Patch(self.id, new_prompt, self.chain_depth + 1)
