@@ -76,11 +76,14 @@ def get_pass_k(total_list, correct_list, patches_per_bug):
     pass_1 = estimate_pass_at_k(np.array(total_list), np.array(correct_list), 1)
     pass_1 = pass_1.tolist()
     pass_1 = sum(pass_1) / len(pass_1)
-    pass_k = estimate_pass_at_k(
-        np.array(total_list),
-        np.array(correct_list),
-        patches_per_bug,
-    )
-    pass_k = pass_k.tolist()
-    pass_k = sum(pass_k) / len(pass_k)
+    if patches_per_bug == 1:
+        pass_k = pass_1
+    else:
+        pass_k = estimate_pass_at_k(
+            np.array(total_list),
+            np.array(correct_list),
+            patches_per_bug,
+        )
+        pass_k = pass_k.tolist()
+        pass_k = sum(pass_k) / len(pass_k)
     return pass_1, pass_k

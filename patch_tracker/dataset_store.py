@@ -1,4 +1,7 @@
 from patch_tracker.bug import Bug
+import numpy as np
+
+from utils import get_pass_k
 
 
 class DatasetStore:
@@ -25,11 +28,13 @@ class DatasetStore:
         self.failed = {depth: 0 for depth in range(max_chain_depth)}
         self.num_patches = {depth: 0 for depth in range(max_chain_depth)}
         self.correct = {depth: 0 for depth in range(max_chain_depth)}
+        self.passAtK = [np.array([]) for _ in range(max_chain_depth)]
 
     def update_stats(self):
         """
         Update statistics for each bug in the dataset.
         """
+        total_patches, correct_patches = [[] for _ in range(self.max_chain_depth)], [[] for _ in range(self.max_chain_depth)]
         for bug in self.bugs:
             bug.update_stats()
 
@@ -42,6 +47,13 @@ class DatasetStore:
                 self.failed[depth] += bug.failed[depth]
                 self.num_patches[depth] += bug.num_patches[depth]
                 self.correct[depth] += bug.correct[depth]
+                if bug.patches[depth]:
+                    total_patches[depth].append(bug.num_patches[depth])
+                    correct_patches[depth].append(bug.correct[depth])
+
+        for depth in range(self.max_chain_depth):
+            k = max(total_patches[depth])
+            self.passAtK[depth] = get_pass_k(total_patches[depth], correct_patches[depth], k)
 
     def to_detailed_json(self):
         """
@@ -70,6 +82,8 @@ class DatasetStore:
                 "Failed": self.failed[depth],
                 "Correct": self.correct[depth],
                 "Amount of patches": self.num_patches[depth],
+                "Pass@1": self.passAtK[depth][0],
+                f"Pass@{conf.patches_per_bug}": self.passAtK[depth][1],
             }
             for depth in range(self.max_chain_depth)
             if any(
@@ -82,6 +96,8 @@ class DatasetStore:
                     self.failed[depth],
                     self.correct[depth],
                     self.num_patches[depth],
+                    self.passAtK[depth][0],
+                    self.passAtK[depth][1]
                 ]
             )
         }
@@ -105,6 +121,7 @@ class DatasetStore:
         total_failed = sum(self.failed.values())
         total_correct = sum(self.correct.values())
         amount_of_patches = sum(self.num_patches.values())
+        pass_at_1 = self.passAtK[0][0]
 
         return {
             "Syntax errors": total_syntax_errors,
@@ -116,6 +133,7 @@ class DatasetStore:
             "Failed": total_failed,
             "Correct": total_correct,
             "Amount of patches": amount_of_patches,
+            "Avg Pass@1": pass_at_1,
             "Configurations": {
                 "Patches per bug": conf.patches_per_bug,
                 "Max length": conf.max_length,
