@@ -71,19 +71,13 @@ def get_pass_k(total_list, correct_list, answers_per_task):
     :param total_list: List of total attempts made for each answer.
     :param correct_list: List of correct attempts made for each answer.
     :param answers_per_task: Number of answers per task.
-    :return: Tuple containing the pass@1 and pass@k values.
+    :return: pass@k value
     """
-    pass_1 = estimate_pass_at_k(np.array(total_list), np.array(correct_list), 1)
-    pass_1 = pass_1.tolist()
-    pass_1 = sum(pass_1) / len(pass_1)
-    if answers_per_task == 1:
-        pass_k = pass_1
-    else:
-        pass_k = estimate_pass_at_k(
-            np.array(total_list),
-            np.array(correct_list),
-            answers_per_task,
-        )
-        pass_k = pass_k.tolist()
-        pass_k = sum(pass_k) / len(pass_k)
-    return pass_1, pass_k
+    pass_k = estimate_pass_at_k(
+        np.array(total_list),
+        np.array(correct_list),
+        answers_per_task,
+    )
+    pass_k = pass_k.tolist()
+    pass_k = sum(pass_k) / len(pass_k)
+    return pass_k

@@ -28,6 +28,7 @@ class DatasetStore:
         self.failed = {depth: 0 for depth in range(max_chain_depth)}
         self.num_answers = {depth: 0 for depth in range(max_chain_depth)}
         self.correct = {depth: 0 for depth in range(max_chain_depth)}
+        self.pass_at_1 = np.array([])
         self.pass_at_k = np.array([])
 
     def update_stats(self):
@@ -52,7 +53,24 @@ class DatasetStore:
                     correct_answers.append(task.correct[depth])
 
         k = max(total_answers)
+        self.pass_at_1 = self.estimate_pass_at_1()
         self.pass_at_k = get_pass_k(total_answers, correct_answers, k)
+    
+    def estimate_pass_at_1(self):
+        """
+        Estimate Pass@1 score.
+
+        :return: Pass@1 value
+        """
+        total_answers, correct_answers = [], []
+        for task in self.tasks:
+            for i, answer in enumerate(task.answers[0]):
+                if i == 0:
+                    correct = 1 if answer.failed == 0 and answer.passed > 0 else 0
+                    total_answers.append(1)
+                    correct_answers.append(correct)
+        
+        return get_pass_k(total_answers, correct_answers, 1)
 
     def to_detailed_json(self):
         """
@@ -86,9 +104,9 @@ class DatasetStore:
                     if depth > 0
                     else None
                 ),
-                "Pass@1": round(self.pass_at_k[0] * 100, 1) if depth == 0 else None,
+                "Pass@1": round(self.pass_at_1 * 100, 1) if depth == 0 else None,
                 f"Pass@{conf.answers_per_task}": (
-                    round(self.pass_at_k[1] * 100, 1) if depth == 0 else None
+                    round(self.pass_at_k * 100, 1) if depth == 0 else None
                 ),
             }
             for depth in range(self.max_chain_depth)
@@ -102,8 +120,8 @@ class DatasetStore:
                     self.failed[depth],
                     self.correct[depth],
                     self.num_answers[depth],
-                    self.pass_at_k[0],
-                    self.pass_at_k[1],
+                    self.pass_at_1,
+                    self.pass_at_k,
                 ]
             )
         }
@@ -133,7 +151,7 @@ class DatasetStore:
         total_failed = sum(self.failed.values())
         total_correct = sum(self.correct.values())
         amount_of_answers = sum(self.num_answers.values())
-        pass_at_1 = round(self.pass_at_k[0] * 100, 1)
+        pass_at_1 = round(self.pass_at_1 * 100, 1)
 
         return {
             "Syntax errors": total_syntax_errors,
