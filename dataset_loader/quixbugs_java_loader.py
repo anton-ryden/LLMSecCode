@@ -6,8 +6,8 @@ import re
 import subprocess
 
 from dataset_loader.dataset_loader import DatasetLoader
-from patch_tracker.patch import Patch
-from patch_tracker.bug import Bug
+from answer_tracker.answer import Answer
+from answer_tracker.task import Task
 
 
 class QuixBugsJavaLoader(DatasetLoader):
@@ -22,15 +22,15 @@ class QuixBugsJavaLoader(DatasetLoader):
         super().__init__()
         self.name = "QuixBugs Java"
 
-    def load_prompts(self, max_chain_depth: int, patches_per_bug: int) -> None:
+    def load_prompts(self, max_chain_depth: int, answers_per_task: int) -> None:
         """
         Load prompts for QuixBugs Python dataset.
 
         :param max_chain_depth: Maximum chain depth.
-        :param patches_per_bug: Number of patches per bug.
+        :param answers_per_task: Number of answers per task.
         """
         print("Loading " + self.name + " prompts...")
-        bugs = []
+        tasks = []
 
         # Receive prompt and inst from DatasetLoader
         system_prompt = self.system_prompt
@@ -55,8 +55,10 @@ class QuixBugsJavaLoader(DatasetLoader):
                             }
                         )
                         new_file_name = file_name.split(".")[0] + ".java"
-                        bugs.append(
-                            Bug(new_file_name, prompt, max_chain_depth, patches_per_bug)
+                        tasks.append(
+                            Task(
+                                new_file_name, prompt, max_chain_depth, answers_per_task
+                            )
                         )
                 else:
                     logging.error(f"'{file_path_full}' is not a file.")
@@ -64,7 +66,7 @@ class QuixBugsJavaLoader(DatasetLoader):
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
         print(self.name + " prompts loaded\n")
-        self.bugs = bugs
+        self.tasks = tasks
 
     def run_gradle_test(self, class_name: str) -> Tuple[int, int]:
         """
@@ -145,39 +147,39 @@ class QuixBugsJavaLoader(DatasetLoader):
         os.chdir(original_dir)
         return passed_tests, failed_tests
 
-    def test_code(self, patch: Patch) -> None:
+    def test_code(self, answer: Answer) -> None:
         """
-        Test the provided patch.
+        Test the provided answer.
 
-        :param patch: Patch object.
+        :param answer: Answer object.
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         dynamic_directory = "./QuixBugs/java_programs"
 
         try:
-            dynamic_file_path = os.path.join(dynamic_directory, patch.id)
+            dynamic_file_path = os.path.join(dynamic_directory, answer.id)
 
             with open(dynamic_file_path, "w") as file:
-                file.write(patch.code)
+                file.write(answer.code)
 
-            class_name = patch.id.split(".")[0]
-            if patch.code != "":
-                patch.syntax_error, patch.error_message = super().check_java_syntax(
+            class_name = answer.id.split(".")[0]
+            if answer.code != "":
+                answer.syntax_error, answer.error_message = super().check_java_syntax(
                     dynamic_file_path
                 )
             else:
-                patch.other_error = True
-                patch.error_message = "Empty file, could not extract any code"
+                answer.other_error = True
+                answer.error_message = "Empty file, could not extract any code"
 
-            if patch.syntax_error != True and patch.other_error != True:
-                patch.passed, patch.failed = self.run_gradle_test(class_name)
+            if answer.syntax_error != True and answer.other_error != True:
+                answer.passed, answer.failed = self.run_gradle_test(class_name)
 
             before = ""
             file_path = os.path.join(
-                "./QuixBugs/java_programs_bug", patch.id.split(".")[0] + ".txt"
+                "./QuixBugs/java_programs_bug", answer.id.split(".")[0] + ".txt"
             )
 
-            # Overwrite to original state, if this is not done is could introduce errors for other patches.
+            # Overwrite to original state, if this is not done is could introduce errors for other answers.
             with open(file_path, "r") as file:
                 before = file.read()
 

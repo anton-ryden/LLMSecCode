@@ -64,25 +64,25 @@ def save_json(data: dict, json_path: str) -> None:
         json.dump(data, json_file, indent=4)
 
 
-def get_pass_k(total_list, correct_list, patches_per_bug):
+def get_pass_k(total_list, correct_list, answers_per_task):
     """
     Calculates the pass@k metric.
 
-    :param total_list: List of total attempts made for each patch.
-    :param correct_list: List of correct attempts made for each patch.
-    :param patches_per_bug: Number of patches per bug.
+    :param total_list: List of total attempts made for each answer.
+    :param correct_list: List of correct attempts made for each answer.
+    :param answers_per_task: Number of answers per task.
     :return: Tuple containing the pass@1 and pass@k values.
     """
     pass_1 = estimate_pass_at_k(np.array(total_list), np.array(correct_list), 1)
     pass_1 = pass_1.tolist()
     pass_1 = sum(pass_1) / len(pass_1)
-    if patches_per_bug == 1:
+    if answers_per_task == 1:
         pass_k = pass_1
     else:
         pass_k = estimate_pass_at_k(
             np.array(total_list),
             np.array(correct_list),
-            patches_per_bug,
+            answers_per_task,
         )
         pass_k = pass_k.tolist()
         pass_k = sum(pass_k) / len(pass_k)

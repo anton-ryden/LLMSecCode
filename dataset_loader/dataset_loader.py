@@ -4,7 +4,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from typing import Tuple
 
-from patch_tracker.patch import Patch
+from answer_tracker.answer import Answer
 
 
 class DatasetLoader(ABC):
@@ -22,40 +22,40 @@ class DatasetLoader(ABC):
                 "content": "You are a coding assistant.",
             }
         ]
-        self.bugs = []
+        self.tasks = []
         self.name = ""
 
     @abstractmethod
-    def load_prompts(self, max_chain_depth: int, patches_per_bug: int) -> None:
+    def load_prompts(self, max_chain_depth: int, answers_per_task: int) -> None:
         """
         Abstract method to load prompts for dataset.
 
         :param max_chain_depth: Maximum chain depth.
-        :param patches_per_bug: Number of patches per bug.
+        :param answers_per_task: Number of answers per task.
         """
         pass
 
     @abstractmethod
-    def test_code(self, patch: Patch) -> None:
+    def test_code(self, answee: Answer) -> None:
         """
-        Abstract method to test code patches.
+        Abstract method to test code answers.
 
-        :param patch: The patch to test.
+        :param answer: The answer to test.
         """
         pass
 
     @staticmethod
-    def format_inst(bug: str, language: str) -> str:
+    def format_inst(code: str, language: str) -> str:
         """
-        Format instruction for a given bug.
+        Format instruction for a given task.
 
-        :param bug: The bug code.
-        :param language: The programming language of the bug code.
+        :param task: The code.
+        :param language: The programming language of the code.
         :return: Formatted instruction string.
         """
         return f"""Rewrite this function so that you remove any bug. Please return all completed functions in a codeblock:
 ```{language}
-{bug}
+{code}
 ```"""
 
     @staticmethod
@@ -102,7 +102,7 @@ class DatasetLoader(ABC):
         # Define the regex pattern
         code_pattern = re.compile(r"\n?```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
 
-        # Find all matches in the patched string
+        # Find all matches in the string
         res_string = ""
         match = re.search(code_pattern, llm_resp_clean)
         if match:
@@ -114,14 +114,10 @@ class DatasetLoader(ABC):
                 )
             res_string += fixed_code_block.strip()
         else:
-            llm_resp_clean = re.sub(
-                r"(<\s>)$", "", llm_resp_clean, flags=re.MULTILINE
-            )
-            llm_resp_clean = re.sub(
-                r"```", "", llm_resp_clean, flags=re.MULTILINE
-            )
+            llm_resp_clean = re.sub(r"(<\s>)$", "", llm_resp_clean, flags=re.MULTILINE)
+            llm_resp_clean = re.sub(r"```", "", llm_resp_clean, flags=re.MULTILINE)
             return llm_resp_clean
-        
+
         return res_string
 
     @staticmethod

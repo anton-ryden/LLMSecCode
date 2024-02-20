@@ -1,14 +1,18 @@
 import copy
 
 
-class Patch:
+class Answer:
+    """
+    Class for storing answers.
+    """
+
     def __init__(self, id: str, prompt: list[dict], chain_depth: int) -> None:
         """
-        Initialize a Patch object.
+        Initialize a answer object.
 
-        :param id: Unique identifier for the patch.
-        :param prompt: Prompt for generating the patch.
-        :param chain_depth: Depth of the patch in the chain.
+        :param id: Unique identifier for the answer.
+        :param prompt: Prompt for generating the answer.
+        :param chain_depth: Depth of the answer in the chain.
         """
         self.id = id
         self.prompt = prompt
@@ -24,11 +28,11 @@ class Patch:
         self.passed = 0
         self.failed = 0
 
-    def get_next_chain(self) -> "Patch":
+    def get_next_chain(self) -> "Answer":
         """
-        Get the next patch in the chain.
+        Get the next answer in the chain.
 
-        :return: A new Patch object representing the next patch in the chain.
+        :return: A new answer object representing the next answer in the chain.
         """
         new_prompt = copy.deepcopy(self.prompt)
         new_prompt.append({"role": "assistant", "content": self.code})
@@ -53,13 +57,13 @@ class Patch:
                     "content": f"The code did not pass all test cases. Improve the code and return a updated version in a codeblock",
                 }
             )
-        return Patch(self.id, new_prompt, self.chain_depth + 1)
+        return Answer(self.id, new_prompt, self.chain_depth + 1)
 
     def detailed_json(self):
         """
-        Convert the patch to a detailed JSON format.
+        Convert the answer to a detailed JSON format.
 
-        :return: Detailed JSON representation of the patch.
+        :return: Detailed JSON representation of the answer.
         """
         return {
             "Id": self.id,

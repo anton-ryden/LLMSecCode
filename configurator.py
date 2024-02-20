@@ -4,7 +4,6 @@ from typing import List
 from dataset_loader.dataset_loader import DatasetLoader
 from dataset_loader.quixbugs_python_loader import QuixBugsPythonLoader
 from dataset_loader.quixbugs_java_loader import QuixBugsJavaLoader
-from dataset_loader.defect4j_loader import Defect4JLoader
 from dataset_loader.human_eval_loader import HumanEvalLoader
 from model_loader.model_loader import ModelLoader
 
@@ -14,7 +13,7 @@ class Configurator:
         # Default configuration values
         self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
         self.model_dir = "./models"
-        self.patches_per_bug = 2
+        self.answers_per_task = 2
         self.max_chain_depth = 2
         self.max_length = 1000
         self.temperature = 0.8
@@ -44,10 +43,10 @@ class Configurator:
             help="Specify where to look and save models to.\n Default is %(default)s.",
         )
         parser.add_argument(
-            "--patches_per_bug",
+            "--answers_per_task",
             type=int,
-            default=self.patches_per_bug,
-            help="The number of patches to generate per bug.\n Default is %(default)s.",
+            default=self.answers_per_task,
+            help="The number of answers to generate per task.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--max_length",
@@ -71,7 +70,7 @@ class Configurator:
             "--max_chain_depth",
             type=int,
             default=self.max_chain_depth,
-            help="The maximum number of tries per patch. If a patch is not correct the model gets a new try. The amount of tries is specified by this value. Value should be >= 1\n Default is %(default)s.",
+            help="The maximum number of tries per answer. If a answer is not correct the model gets a new try. The amount of tries is specified by this value. Value should be >= 1\n Default is %(default)s.",
         )
         parser.add_argument(
             "--datasets",
@@ -111,8 +110,6 @@ class Configurator:
                 dataset_loaders.append(QuixBugsPythonLoader())
             elif dataset == "quixbugs-java":
                 dataset_loaders.append(QuixBugsJavaLoader())
-            elif dataset == "defect4j":
-                dataset_loaders.append(Defect4JLoader())
             elif dataset == "human_eval":
                 dataset_loaders.append(HumanEvalLoader())
             else:

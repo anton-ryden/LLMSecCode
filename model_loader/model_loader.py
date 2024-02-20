@@ -29,7 +29,7 @@ class ModelLoader:
         self.temperature = conf.temperature
         self.max_length = conf.max_length
         self.top_p = conf.top_p
-        self.patch_size = conf.patches_per_bug
+        self.answer_size = conf.answers_per_task
         self.batch_size = 1
         self.chat_template = ""
 

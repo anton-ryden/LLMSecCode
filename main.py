@@ -4,9 +4,9 @@ from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
 from utils import save_json, print_progress_bar
-from patch_tracker.dataset_store import DatasetStore
-from patch_tracker.bug import Bug
-from patch_tracker.patch import Patch
+from answer_tracker.dataset_store import DatasetStore
+from answer_tracker.task import Task
+from answer_tracker.answer import Answer
 
 
 def evaluate_models_on_datasets(
@@ -56,12 +56,12 @@ def evaluate_single_model_on_datasets(
     for dataset_loader in dataset_loaders:
         # Load prompts
         dataset_loader.load_prompts(
-            configurator.max_chain_depth, configurator.patches_per_bug
+            configurator.max_chain_depth, configurator.answers_per_task
         )
 
         # Create the objects to store the info
         dataset_store = DatasetStore(
-            dataset_loader.name, configurator.max_chain_depth, dataset_loader.bugs
+            dataset_loader.name, configurator.max_chain_depth, dataset_loader.tasks
         )
 
         evaluate_single_model_on_dataset(
@@ -102,68 +102,72 @@ def evaluate_single_model_on_dataset(
     :param max_chain_depth: Maximum chain depth.
     """
     for depth in range(max_chain_depth):
-        patches = []
+        answers = []
         if depth == 0:
-            for bug in dataset_store.bugs:
-                patches.extend(bug.patches[0])
+            for task in dataset_store.tasks:
+                answers.extend(task.answers[0])
         else:
-            patches = get_failed_patches(dataset_store.bugs, depth)
-            model_loader.max_length = (depth+1) * model_loader.max_length
+            answers = get_incorrect_answers(dataset_store.tasks, depth)
+            model_loader.max_length = (depth + 1) * model_loader.max_length
 
-        generate_answers(patches, depth, dataset_loader, model_loader)
+        generate_answers(answers, depth, dataset_loader, model_loader)
 
-        test_answers(patches, depth, dataset_loader)
+        test_answers(answers, depth, dataset_loader)
 
     print()
 
 
 def generate_answers(
-    patches: List[Patch],
+    answers: List[Answer],
     depth: int,
     dataset_loader: DatasetLoader,
     model_loader: ModelLoader,
 ):
     """
-    Generate answers for a given set of patches.
+    Generate answers for a given set of answers.
 
-    :param patches: List of patches.
+    :param answers: List of answers.
     :param depth: Depth of the chain..
     :param dataset_loader: Instance of DatasetLoader.
     :param model_loader: Instance of ModelLoader.
     """
-    if len(patches) == 0:
+    if len(answers) == 0:
         return
 
     if depth == 0:
         print(f"Generating answers for dataset: {dataset_loader.name}")
     else:
         print(f"Generating answers Chain-Of-Thought nr: {depth}")
-    print_progress_bar(0, len(patches))
+    print_progress_bar(0, len(answers))
 
-    for i, patch in enumerate(patches, start=1):
+    for i, answer in enumerate(answers, start=1):
         # Generate model responses and timing
-        patch.llm_resp, patch.time_to_gen = model_loader.prompt_llm(patch.prompt)
+        answer.llm_resp, answer.time_to_gen = model_loader.prompt_llm(answer.prompt)
 
         # Format responses and extract code
-        patch.llm_resp_clean = model_loader.clean_response(patch.prompt, patch.llm_resp)
-        patch.code = dataset_loader.extract_code(patch.llm_resp_clean)
+        answer.llm_resp_clean = model_loader.clean_response(
+            answer.prompt, answer.llm_resp
+        )
+        answer.code = dataset_loader.extract_code(answer.llm_resp_clean)
 
         # Update tokens generated
-        patch.tokens_generated = model_loader.get_tokens_generated(patch.llm_resp_clean)
+        answer.tokens_generated = model_loader.get_tokens_generated(
+            answer.llm_resp_clean
+        )
 
-        print_progress_bar(i, len(patches))
+        print_progress_bar(i, len(answers))
     print()
 
 
-def test_answers(patches: List[Patch], depth: int, dataset_loader: DatasetLoader):
+def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoader):
     """
-    Test answers for a given set of patches.
+    Test answers for a given set of answers.
 
-    :param patches: List of patches.
+    :param answers: List of answers.
     :param depth: Depth of the chain.
     :param dataset_loader: Instance of DatasetLoader.
     """
-    if len(patches) == 0:
+    if len(answers) == 0:
         return
 
     if depth == 0:
@@ -171,31 +175,31 @@ def test_answers(patches: List[Patch], depth: int, dataset_loader: DatasetLoader
     else:
         print(f"Testing answers Chain-Of-Thougth nr: {depth}")
 
-    print_progress_bar(0, len(patches))
-    for i, patch in enumerate(patches, start=1):
-        dataset_loader.test_code(patch)
+    print_progress_bar(0, len(answers))
+    for i, answer in enumerate(answers, start=1):
+        dataset_loader.test_code(answer)
 
-        print_progress_bar(i, len(patches))
+        print_progress_bar(i, len(answers))
     print()
 
 
-def get_failed_patches(bugs: list[Bug], depth: int) -> List[Patch]:
+def get_incorrect_answers(tasks: list[Task], depth: int) -> List[Answer]:
     """
-    Get failed patches for a given depth.
+    Get answers that failed atleast one test or had some kind of error for a given depth.
 
-    :param bugs: List of bugs.
+    :param tasks: List of tasks.
     :param depth: Depth of the chain.
-    :return: List of failed patches.
+    :return: List of failed answers.
     """
-    patches = []
-    for bug in bugs:
-        for patch in bug.patches[depth - 1]:
-            if patch.failed > 0 or patch.syntax_error or patch.other_error:
-                next_patch = patch.get_next_chain()
-                bug.add_patch(next_patch)
-                patches.append(next_patch)
+    answers = []
+    for task in tasks:
+        for answer in task.answers[depth - 1]:
+            if answer.failed > 0 or answer.syntax_error or answer.other_error:
+                next_answer = answer.get_next_chain()
+                task.add_answer(next_answer)
+                answers.append(next_answer)
 
-    return patches
+    return answers
 
 
 if __name__ == "__main__":
