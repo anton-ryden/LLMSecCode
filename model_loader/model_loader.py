@@ -89,7 +89,7 @@ class ModelLoader:
         :return: The string without special tokens.
         """
         for token in self.tokenizer.all_special_tokens:
-            no_inst.replace(token, "")
+            no_inst = no_inst.replace(token, "")
         return no_inst
 
     def remove_inst(
