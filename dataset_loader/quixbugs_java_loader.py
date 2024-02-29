@@ -44,7 +44,7 @@ class QuixBugsJavaLoader(DatasetLoader):
                     with open(file_path_full, "r") as file:
                         file_data = file.read().strip()
 
-                    prompts.add_conversation(file_name, file_data, "java")
+                    prompts.add_instruct(file_name, file_data, "java")
 
                     # Split the Java file content into lines
                     lines = file_data.split("\n")

@@ -70,6 +70,12 @@ def evaluate_single_model_on_datasets(
             configurator.answers_per_task,
         )
 
+        if len(tasks) == 0:
+            print(
+                f"NOTE: Skipping dataset {dataset_loader.name} with conversation type {model_loader.conversation_type} since it is not supported."
+            )
+            continue
+
         # Create the objects to store the info
         dataset_store = DatasetStore(
             dataset_loader.name,

@@ -13,6 +13,15 @@ from data_structures.prompt_store import PromptsStore
 class HumanEvalLoader(DatasetLoader):
     """
     Class for loading and testing the dataset HumanEval.
+
+    Attributes:
+        name (str): The name of the dataset.
+        area (str): The area of the dataset.
+
+    Methods:
+        __init__: Initialize the HumanEvalLoader.
+        load_prompts: Load prompts for HumanEval dataset.
+        test_code: Test the provided answer.
     """
 
     def __init__(self) -> None:
@@ -26,9 +35,6 @@ class HumanEvalLoader(DatasetLoader):
     def load_prompts(self) -> None:
         """
         Load prompts for HumanEval dataset.
-
-        :param max_chain_depth: Maximum chain depth.
-        :param answers_per_task: Number of answers per task.
         """
         print(f"Loading {self.name} prompts...")
         prompts = PromptsStore(self.area)
@@ -38,8 +44,7 @@ class HumanEvalLoader(DatasetLoader):
         data = [problems]
 
         for task_id, entry in data[0].items():
-            prompts.add_conversation(task_id, entry["prompt"], "python")
-            prompts.add_infilling()
+            prompts.add_instruct(task_id, entry["prompt"], "python")
 
         print(f"{self.name} prompts loaded.\n")
         self.prompts = prompts
@@ -48,7 +53,8 @@ class HumanEvalLoader(DatasetLoader):
         """
         Test the provided answer.
 
-        :param answer: Answer object.
+        Args:
+            answer (Answer): Answer object.
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         run_eval_list = defaultdict(list)
@@ -74,13 +80,15 @@ class HumanEvalLoader(DatasetLoader):
 
 def run_eval(task_id, answer, results):
     """
-    Evaluate a answer for a task using human evaluation.
+    Evaluate an answer for a task using human evaluation.
 
-    :param task_id: ID of the task being evaluated.
-    :param answer: Answer or completion to be evaluated.
-    :param results: Dictionary storing evaluation results.
+    Args:
+        task_id (str): ID of the task being evaluated.
+        answer (Any): Answer or completion to be evaluated.
+        results (Dict[str, List[Any]]): Dictionar y storing evaluation results.
 
-    :return: Updated evaluation results.
+    Returns:
+        Dict[str, List[Any]]: Updated evaluation results.
 
     Evaluates the given answer against problems from HUMAN_EVAL, checks correctness with a timeout,
     and updates the results dictionary accordingly.

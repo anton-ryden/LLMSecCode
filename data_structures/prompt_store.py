@@ -21,9 +21,9 @@ class PromptsStore:
         self.completion = []
         self.infilling = []
 
-    def add_conversation(self, id: str, code: str, language: str):
+    def add_instruct(self, id: str, code: str, language: str):
         """
-        Adds a conversation prompt to the prompts store.
+        Adds a instruct prompt to the prompts store.
 
         Args:
             id (str): Unique identifier for the prompt.

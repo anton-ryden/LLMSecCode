@@ -45,7 +45,7 @@ class QuixBugsPythonLoader(DatasetLoader):
                     with open(file_path, "r") as file:
                         file_data = file.read().strip()
 
-                    prompts.add_conversation(file_name, file_data, "python")
+                    prompts.add_instruct(file_name, file_data, "python")
 
                     lines = file_data.split("\n")
                     # Find the index of the first line that starts with "def"
