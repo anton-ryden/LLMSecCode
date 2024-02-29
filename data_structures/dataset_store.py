@@ -1,4 +1,4 @@
-from answer_tracker.task import Task
+from data_structures.task import Task
 import numpy as np
 
 from utils import get_pass_k
@@ -6,20 +6,25 @@ from utils import get_pass_k
 
 class DatasetStore:
     """
-    Class for storing dataset data.
+    Represents a dataset store containing dataset data.
     """
 
-    def __init__(self, name: str, max_chain_depth: int, tasks: list[Task]) -> None:
+    def __init__(
+        self, name: str, max_chain_depth: int, tasks: list[Task], area: str
+    ) -> None:
         """
-        Initialize a DatasetStore object.
+        Initializes a DatasetStore object.
 
-        :param name: Name of the dataset.
-        :param max_chain_depth: Maximum chain depth.
-        :param tasks: List of task objects.
+        Args:
+            name (str): Name of the dataset.
+            max_chain_depth (int): Maximum chain depth.
+            tasks (List[Task]): List of task objects.
+            area (str): Name of the area
         """
         self.name = name
         self.max_chain_depth = max_chain_depth
         self.tasks = tasks
+        self.area = area
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.time_s = {depth: 0 for depth in range(max_chain_depth)}
@@ -33,7 +38,7 @@ class DatasetStore:
 
     def update_stats(self):
         """
-        Update statistics for each task in the dataset.
+        Updates statistics for each task in the dataset.
         """
         total_answers, correct_answers = [], []
         for task in self.tasks:
@@ -55,12 +60,13 @@ class DatasetStore:
         k = max(total_answers)
         self.pass_at_1 = self.estimate_pass_at_1()
         self.pass_at_k = get_pass_k(total_answers, correct_answers, k)
-    
+
     def estimate_pass_at_1(self):
         """
-        Estimate Pass@1 score.
+        Estimates the Pass@1 score.
 
-        :return: Pass@1 value
+        Returns:
+            float: Pass@1 value.
         """
         total_answers, correct_answers = [], []
         for task in self.tasks:
@@ -69,25 +75,31 @@ class DatasetStore:
                     correct = 1 if answer.failed == 0 and answer.passed > 0 else 0
                     total_answers.append(1)
                     correct_answers.append(correct)
-        
+
         return get_pass_k(total_answers, correct_answers, 1)
 
     def to_detailed_json(self):
         """
-        Convert the dataset store to a summary JSON format.
+        Convert the dataset store to a detailed JSON format.
 
-        :param conf: Configuration object.
+        Returns:
+            dict: Detailed JSON representation of the dataset store.
         """
         return {
             "Name": self.name,
             "Tasks": [task.detailed_json() for task in self.tasks],
         }
 
-    def to_summary_json(self, conf):
+    def to_summary_json(self, conf, conversation_type):
         """
         Convert the dataset store to a brief summary JSON format.
 
-        :param conf: Configuration object.
+        Args:
+            conf: Configuration object.
+            conversation_type (str): Type of conversation (conversation, completion, infilling).
+
+        Returns:
+            dict: Brief summary JSON representation of the dataset store.
         """
         statistics = {
             depth: {
@@ -133,16 +145,28 @@ class DatasetStore:
 
         return {
             "Name": self.name,
+            "Area": self.area,
             "Statistics": statistics,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
                 "Max length": conf.max_length,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
+                "Conversation type": conversation_type,
             },
         }
 
-    def to_brief_summary_json(self, conf):
+    def to_brief_summary_json(self, conf, conversation_type):
+        """
+        Convert the dataset store to a brief summary JSON format.
+
+        Args:
+            conf: Configuration object.
+            conversation_type (str): Type of conversation (conversation, completion, infilling).
+
+        Returns:
+            dict: Brief summary JSON representation of the dataset store.
+        """
         total_syntax_errors = sum(self.syntax_errors.values())
         total_other_errors = sum(self.other_errors.values())
         total_time_s = sum(self.time_s.values())
@@ -154,6 +178,8 @@ class DatasetStore:
         pass_at_1 = round(self.pass_at_1 * 100, 1)
 
         return {
+            "Name": self.name,
+            "Area": self.area,
             "Syntax errors": total_syntax_errors,
             "Other errors": total_other_errors,
             "Time(sec)": total_time_s,
@@ -169,5 +195,6 @@ class DatasetStore:
                 "Max length": conf.max_length,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
+                "Conversation type": conversation_type,
             },
         }

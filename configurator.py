@@ -10,12 +10,15 @@ from model_loader.model_loader import ModelLoader
 
 class Configurator:
     def __init__(self):
+        """Initialize the Configurator with default configurations."""
         # Default configuration values
-        self.model_configs = "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama"
+        self.model_configs = [
+            "TheBloke/CodeLlama-7B-GPTQ:llama:instruction",
+        ]
         self.model_dir = "./models"
-        self.answers_per_task = 2
-        self.max_chain_depth = 2
-        self.max_length = 1000
+        self.answers_per_task = 1
+        self.max_chain_depth = 1
+        self.max_length = 400
         self.temperature = 0.8
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
@@ -33,8 +36,8 @@ class Configurator:
             "--model_configs",
             type=str,
             nargs="+",
-            default=[f"{self.model_configs}"],
-            help="Specify one or more model configurations in the format 'model_id:template_name', separated by spaces.\n Default is %(default)s.",
+            default=self.model_configs,
+            help="Specify one or more model configurations in the format 'model_id:template_name:conversation_type', separated by spaces.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--model_path",
@@ -94,15 +97,24 @@ class Configurator:
 
     def check_model_configs(self):
         """Check if specified template sets exist."""
-        files = os.listdir("./prompt_templates")
-
         for model_config in self.model_configs:
-            _, template_set = model_config.split(":")
-            if template_set not in files:
-                raise ValueError(f"Invalid template set: {template_set}")
+            parts = model_config.split(":")
+            files = os.listdir(f"./chat_templates")
+            if parts[1] not in files:
+                raise ValueError(f"Template not found: chat_templates/{parts[1]}")
+            elif parts[2] not in ["instruction", "infilling"]:
+                raise ValueError(f"The converation type '{parts[2]}' is not supported.")
+            elif f"{parts[1]}.json" not in files:
+                raise ValueError(
+                    f"If conversation type infilling is used a {parts[1]}.json need to be created."
+                )
 
     def get_dataset_loaders(self) -> List[DatasetLoader]:
-        """Get dataset loaders based on specified datasets."""
+        """Get dataset loaders based on specified datasets.
+
+        Returns:
+            List[DatasetLoader]: List of dataset loaders.
+        """
         dataset_loaders = []
 
         for dataset in self.datasets:
@@ -121,11 +133,16 @@ class Configurator:
         return dataset_loaders
 
     def get_model_loaders(self) -> List[ModelLoader]:
-        """Get model loaders based on specified model configurations."""
+        """Get model loaders based on specified model configurations.
+
+        Returns:
+            List[ModelLoader]: List of model loaders.
+        """
         model_loaders = []
 
         for model_config in self.model_configs:
-            model_id, template_name = model_config.split(":")
-            model_loaders.append(ModelLoader(self, model_id, template_name))
-
+            model_id, template_name, conversation_type = model_config.split(":")
+            model_loaders.append(
+                ModelLoader(self, model_id, template_name, conversation_type)
+            )
         return model_loaders

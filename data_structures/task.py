@@ -1,26 +1,34 @@
 import copy
 
-from answer_tracker.answer import Answer
+from data_structures.answer import Answer
+from data_structures.prompt import Prompt
 
 
 class Task:
     """
-    Class for storing tasks.
+    Class for storing tasks along with their statistics and answers.
     """
 
     def __init__(
-        self, id: str, prompt: str, max_chain_depth: int, answers_per_task: int
+        self,
+        id: str,
+        prompt_instance: Prompt,
+        conversation_type: str,
+        max_chain_depth: int,
+        answers_per_task: int,
     ) -> None:
         """
-        Initialize a Task object.
+        Initializes a Task object.
 
-        :param id: Unique identifier for the task.
-        :param prompt: Prompt for generating answers.
-        :param max_chain_depth: Maximum chain depth.
-        :param answers_per_task: Number of answers per task.
+        Args:
+            id (str): Unique identifier for the task.
+            prompt_instance (Prompt): Prompt for generating answers.
+            conversation_type (str): Type of conversation.
+            max_chain_depth (int): Maximum chain depth.
+            answers_per_task (int): Number of answers per task.
         """
         self.id = id
-        self.prompt = prompt
+        self.prompt_instance = prompt_instance
         self.max_chain_depth = max_chain_depth
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
@@ -32,15 +40,16 @@ class Task:
         self.num_answers = {depth: 0 for depth in range(max_chain_depth)}
         self.correct = {depth: 0 for depth in range(max_chain_depth)}
 
-        p = Answer(id, prompt, 0)
+        p = Answer(id, prompt_instance, conversation_type, 0)
         for _ in range(answers_per_task):
             self.add_answer(copy.copy(p))
 
     def add_answer(self, answer: Answer):
         """
-        Add a answer to the task.
+        Add an answer to the task.
 
-        :param answer: Answer object to be added.
+        Args:
+            answer (Answer): Answer object to be added.
         """
         depth = answer.chain_depth
         self.answers[depth].append(answer)
@@ -64,7 +73,8 @@ class Task:
         """
         Convert the task to a detailed JSON format.
 
-        :return: Detailed JSON representation of the task.
+        Returns:
+            dict: Detailed JSON representation of the task.
         """
         answers = []
         for depth in range(self.max_chain_depth):
@@ -72,13 +82,18 @@ class Task:
                 if answer != []:
                     answers.append(answer.detailed_json())
 
-        return {"Id": self.id, "Prompt": self.prompt, "Answers": answers}
+        return {
+            "Id": self.id,
+            "Prompt": self.prompt_instance.prompt,
+            "Answers": answers,
+        }
 
     def summary_json(self):
         """
         Convert the task to a summary JSON format.
 
-        :return: Summary JSON representation of the task.
+        Returns:
+            dict: Summary JSON representation of the task.
         """
         statistics = {
             depth: {
@@ -105,6 +120,6 @@ class Task:
         }
         return {
             "Id": self.id,
-            "Prompt": self.prompt,
+            "Prompt": self.prompt_instance.prompt,
             "Statistics": statistics,
         }

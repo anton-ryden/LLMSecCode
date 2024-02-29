@@ -5,8 +5,9 @@ from human_eval.execution import check_correctness
 from human_eval.data import read_problems, HUMAN_EVAL
 from collections import defaultdict
 from dataset_loader.dataset_loader import DatasetLoader
-from answer_tracker.task import Task
-from answer_tracker.answer import Answer
+from data_structures.task import Task
+from data_structures.answer import Answer
+from data_structures.prompt_store import PromptsStore
 
 
 class HumanEvalLoader(DatasetLoader):
@@ -20,36 +21,28 @@ class HumanEvalLoader(DatasetLoader):
         """
         super().__init__()
         self.name = "HumanEval"
+        self.area = "CodeGen"
 
-    def load_prompts(self, max_chain_depth: int, answers_per_task: int) -> None:
+    def load_prompts(self) -> None:
         """
         Load prompts for HumanEval dataset.
 
         :param max_chain_depth: Maximum chain depth.
         :param answers_per_task: Number of answers per task.
         """
-        print("Loading " + self.name + " prompts...")
-        tasks = []
-
-        # Receive prompt and inst from DatasetLoader
-        system_prompt = self.system_prompt
+        print(f"Loading {self.name} prompts...")
+        prompts = PromptsStore(self.area)
 
         # Fetch all problems from HumanEval
         problems = read_problems(HUMAN_EVAL)
         data = [problems]
 
         for task_id, entry in data[0].items():
-            prompt = copy.deepcopy(system_prompt)
-            prompt.append(
-                {
-                    "role": "user",
-                    "content": f"Write a Python function `{entry['entry_point']}` to solve the following problem:\n{entry['prompt']}",
-                }
-            )
-            tasks.append(Task(task_id, prompt, max_chain_depth, answers_per_task))
+            prompts.add_conversation(task_id, entry["prompt"], "python")
+            prompts.add_infilling()
 
-        print(self.name + " prompts loaded.\n")
-        self.tasks = tasks
+        print(f"{self.name} prompts loaded.\n")
+        self.prompts = prompts
 
     def test_code(self, answer: Answer) -> None:
         """

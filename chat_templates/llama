@@ -12,16 +12,16 @@
     {% endif %}
     
     {% if loop.index0 == 0 and system_message != false %}
-        {% set content = system_message + '\n' + message['content'] %}
+        {% set content = '<<SYS>>\n' + system_message + '\n<</SYS>>\n\n' + message['content'] %}
     {% else %}
         {% set content = message['content'] %}
     {% endif %}
 
     {% if message['role'] == 'user' %}
-        {{'### Instruction:\n' + message['content'] + '\n'}}
+        {{bos_token + '[INST] ' + content.strip() + ' [/INST]' }}
     {% elif message['role'] == 'system' %}
-        {{content.strip() + '\n'}}
+        {{'<<SYS>>\n' + content.strip() + '\n<</SYS>>\n\n' }}
     {% elif message['role'] == 'assistant' %}
-        {{'### Response:\n' + message['content'] + '\n<|EOT|>\n'}}
+        {{' '  + content.strip() + ' ' + eos_token}}
     {% endif %}
 {% endfor %}

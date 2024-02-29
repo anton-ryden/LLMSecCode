@@ -1,12 +1,11 @@
 import os
-import copy
 import logging
 import subprocess
 import re
 
 from dataset_loader.dataset_loader import DatasetLoader
-from answer_tracker.task import Task
-from answer_tracker.answer import Answer
+from data_structures.answer import Answer
+from data_structures.prompt_store import PromptsStore
 
 
 class QuixBugsPythonLoader(DatasetLoader):
@@ -20,57 +19,68 @@ class QuixBugsPythonLoader(DatasetLoader):
         """
         super().__init__()
         self.name = "QuixBugs Python"
+        self.area = "APR"
 
-    def load_prompts(self, max_chain_depth: int, answers_per_task: int) -> None:
+    def load_prompts(self) -> None:
         """
         Load prompts for QuixBugs Python dataset.
 
-        :param max_chain_depth: Maximum chain depth.
-        :param answers_per_task: Number of answers per task.
+        Returns:
+            None
         """
-        print("Loading " + self.name + " prompts...")
-        tasks = []
-
-        # Receive prompt and inst from DatasetLoader
-        system_prompt = self.system_prompt
+        print(f"Loading {self.name} prompts...")
+        prompts = PromptsStore(self.area)
 
         # Get all python files in QuixBugs
         python_directory = "./QuixBugs/python_programs_bug"
         python_file_list = os.listdir(python_directory)
 
-        for file_name in python_file_list:
+        for i, file_name in enumerate(python_file_list):
+            if i == 10:
+                break
             try:
                 file_path = os.path.join(python_directory, file_name)
                 if os.path.isfile(file_path):
                     # Read the content of each Python file and create prompts
                     with open(file_path, "r") as file:
-                        file_data = file.read()
+                        file_data = file.read().strip()
 
-                        prompt = copy.deepcopy(system_prompt)
-                        prompt.append(
-                            {
-                                "role": "user",
-                                "content": self.format_inst(file_data, "python"),
-                            }
-                        )
-                        tasks.append(
-                            Task(file_name, prompt, max_chain_depth, answers_per_task)
-                        )
+                    prompts.add_conversation(file_name, file_data, "python")
 
+                    lines = file_data.split("\n")
+                    # Find the index of the first line that starts with "def"
+                    first_def_index = next(
+                        (i for i, line in enumerate(lines) if line.startswith("def")),
+                        None,
+                    )
+                    # Join all lines up to and including the first line that starts with "def"
+                    first_line = "\n".join(
+                        lines[: first_def_index + 1]
+                        if first_def_index is not None
+                        else lines
+                    )
+
+                    prompts.add_completion(file_name, first_line)
+
+                    last_line = "\n".join(lines[len(lines) - 1 :])
+                    prompts.add_infilling(file_name, first_line, last_line)
                 else:
                     logging.error(f"'{file_path}' is not a file.")
             except Exception as e:
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
-        print(self.name + " prompts loaded.\n")
-        self.tasks = tasks
+        print(f"{self.name} prompts loaded.\n")
+        self.prompts = prompts
 
     def run_tests(self, program_path: str, answer: Answer) -> None:
         """
         Run tests for the answer.
 
-        :param program_path: Path to the program.
-        :param answer: Answer object.
+        Args:
+            program_path (str): Path to the program.
+            answer (Answer): Answer object.
+        Returns:
+            None
         """
         try:
             # Run the pytest command and capture the output
@@ -116,7 +126,10 @@ class QuixBugsPythonLoader(DatasetLoader):
         """
         Test the provided answer.
 
-        :param answer: Answer object.
+        Args:
+            answer (Answer): Answer object.
+        Returns:
+            None
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
 

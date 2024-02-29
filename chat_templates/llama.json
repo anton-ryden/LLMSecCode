@@ -1,0 +1,5 @@
+{
+    "prompt_template": "<PRE> {prefix} <MID>{suffix} <SUF>",
+    "answer_template": "{answer}",
+    "tokens_to_remove": ["<EOT>"]
+}

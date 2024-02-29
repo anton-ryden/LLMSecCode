@@ -6,74 +6,85 @@ import re
 import subprocess
 
 from dataset_loader.dataset_loader import DatasetLoader
-from answer_tracker.answer import Answer
-from answer_tracker.task import Task
+from data_structures.answer import Answer
+from data_structures.prompt_store import PromptsStore
 
 
 class QuixBugsJavaLoader(DatasetLoader):
     """
-    Class for loading and testing the dataset QuixBugs Java.
+    Class for loading and testing the QuixBugs Java dataset.
     """
 
     def __init__(self) -> None:
         """
-        Initialize the QuixBugsPythonLoader.
+        Initializes the QuixBugsJavaLoader.
         """
         super().__init__()
         self.name = "QuixBugs Java"
+        self.area = "APR"
 
-    def load_prompts(self, max_chain_depth: int, answers_per_task: int) -> None:
+    def load_prompts(self) -> None:
         """
-        Load prompts for QuixBugs Python dataset.
-
-        :param max_chain_depth: Maximum chain depth.
-        :param answers_per_task: Number of answers per task.
+        Loads prompts for the QuixBugs Java dataset.
         """
-        print("Loading " + self.name + " prompts...")
-        tasks = []
-
-        # Receive prompt and inst from DatasetLoader
-        system_prompt = self.system_prompt
+        print(f"Loading {self.name} prompts...")
+        prompts = PromptsStore(self.area)
 
         # Get all Java files in QuixBugs director
         java_directory = "./QuixBugs/java_programs_bug"
         java_file_list = os.listdir(java_directory)
 
-        for file_name in java_file_list:
+        for i, file_name in enumerate(java_file_list):
+            if i == 10:
+                break
             try:
                 file_path_full = os.path.join(java_directory, file_name)
                 if os.path.isfile(file_path_full):
                     # Read the content of each Java file and create prompts
                     with open(file_path_full, "r") as file:
-                        file_data = file.read()
+                        file_data = file.read().strip()
 
-                        prompt = copy.deepcopy(system_prompt)
-                        prompt.append(
-                            {
-                                "role": "user",
-                                "content": self.format_inst(file_data, "java"),
-                            }
-                        )
-                        new_file_name = file_name.split(".")[0] + ".java"
-                        tasks.append(
-                            Task(
-                                new_file_name, prompt, max_chain_depth, answers_per_task
-                            )
-                        )
+                    prompts.add_conversation(file_name, file_data, "java")
+
+                    # Split the Java file content into lines
+                    lines = file_data.split("\n")
+
+                    count = 0
+                    second_index = None
+
+                    for i, line in enumerate(lines):
+                        if "{" in line:
+                            count += 1
+                            if count == 2:
+                                second_index = i
+                                break
+                    # Create a new list containing lines up to that index, otherwise containing all lines
+                    result_lines = (
+                        lines[: second_index + 1] if second_index is not None else lines
+                    )
+                    prefix = "\n".join(result_lines)
+
+                    prompts.add_completion(file_name, prefix)
+
+                    last_lines = "\n".join(lines[len(lines) - 3 :])
+                    prompts.add_infilling(file_name, prefix, last_lines)
                 else:
                     logging.error(f"'{file_path_full}' is not a file.")
             except Exception as e:
                 logging.error(f"Error reading file '{file_name}': {str(e)}")
 
-        print(self.name + " prompts loaded\n")
-        self.tasks = tasks
+        print(f"{self.name} prompts loaded\n")
+        self.prompts = prompts
 
-    def run_gradle_test(self, class_name: str) -> Tuple[int, int]:
+    def run_gradle_test(self, class_name: str) -> Tuple[int, int, bool]:
         """
-        Run Gradle tests for a specified Java class.
+        Runs Gradle te""" """sts for a specified Java class.
 
-        :param class_name: The name of the Java class to run tests for.
-        :return: A tuple containing the number of passed tests and the number of failed tests.
+        Args:
+            class_name (str): The name of the Java class to run tests for.
+
+        Returns:
+            Tuple[int, int, bool]: A tuple containing the number of passed tests, the number of failed tests and if a syntax error occured.
         """
         original_dir = os.getcwd()
         quixbugs_dir = "./QuixBugs/"
@@ -136,7 +147,8 @@ class QuixBugsJavaLoader(DatasetLoader):
                         # Get the number of @Test in test code
                         test_instances = re.findall(r"@Test", java_code)
                         passed_tests = len(test_instances)
-
+                else:
+                    return 0, 0, True
         except subprocess.TimeoutExpired:
             subprocess.run(["pkill", "-f", gradle_command])
         except Exception as e:
@@ -145,24 +157,26 @@ class QuixBugsJavaLoader(DatasetLoader):
             subprocess.run(["pkill", "-f", gradle_command])
 
         os.chdir(original_dir)
-        return passed_tests, failed_tests
+        return passed_tests, failed_tests, False
 
     def test_code(self, answer: Answer) -> None:
         """
-        Test the provided answer.
+        Tests the provided answer.
 
-        :param answer: Answer object.
+        Args:
+            answer (Answer): Answer object.
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         dynamic_directory = "./QuixBugs/java_programs"
 
         try:
-            dynamic_file_path = os.path.join(dynamic_directory, answer.id)
+            dynamic_file_path = os.path.join(
+                dynamic_directory, answer.id.replace(".txt", ".java")
+            )
 
             with open(dynamic_file_path, "w") as file:
                 file.write(answer.code)
 
-            class_name = answer.id.split(".")[0]
             if answer.code != "":
                 answer.syntax_error, answer.error_message = super().check_java_syntax(
                     dynamic_file_path
@@ -172,12 +186,13 @@ class QuixBugsJavaLoader(DatasetLoader):
                 answer.error_message = "Empty file, could not extract any code"
 
             if answer.syntax_error != True and answer.other_error != True:
-                answer.passed, answer.failed = self.run_gradle_test(class_name)
+                class_name = answer.id.split(".")[0]
+                answer.passed, answer.failed, answer.syntax_error = (
+                    self.run_gradle_test(class_name)
+                )
 
             before = ""
-            file_path = os.path.join(
-                "./QuixBugs/java_programs_bug", answer.id.split(".")[0] + ".txt"
-            )
+            file_path = os.path.join("./QuixBugs/java_programs_bug", answer.id)
 
             # Overwrite to original state, if this is not done is could introduce errors for other answers.
             with open(file_path, "r") as file:

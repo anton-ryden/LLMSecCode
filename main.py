@@ -4,23 +4,26 @@ from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
 from utils import save_json, print_progress_bar
-from answer_tracker.dataset_store import DatasetStore
-from answer_tracker.task import Task
-from answer_tracker.answer import Answer
+from data_structures.dataset_store import DatasetStore
+from data_structures.task import Task
+from data_structures.answer import Answer
 
 
 def evaluate_models_on_datasets(
     model_loaders: List[ModelLoader],
     dataset_loaders: List[DatasetLoader],
     configurator: Configurator,
-):
+) -> List[Dict]:
     """
     Evaluate a list of model loaders on a list of dataset loaders.
 
-    :param model_loaders: List of ModelLoader instances.
-    :param dataset_loaders: List of DatasetLoader instances.
-    :param configurator: Configurator instance.
-    :return: List of dictionaries containing evaluation results for each model on each dataset.
+    Args:
+        model_loaders (List[ModelLoader]): List of ModelLoader instances.
+        dataset_loaders (List[DatasetLoader]): List of DatasetLoader instances.
+        configurator (Configurator): Configurator instance.
+
+    Returns:
+        List[Dict]: List of dictionaries containing evaluation results for each model on each dataset.
     """
     evaluation_results = []
 
@@ -46,22 +49,33 @@ def evaluate_single_model_on_datasets(
     """
     Evaluate a model loader on multiple dataset loaders.
 
-    :param model_loader: Instance of ModelLoader.
-    :param dataset_loaders: List of DatasetLoader instances.
-    :param configurator: Configurator instance.
-    :return: List of dictionaries containing evaluation results for the model on each dataset.
+    Args:
+        model_loader (ModelLoader): Instance of ModelLoader.
+        dataset_loaders (List[DatasetLoader]): List of DatasetLoader instances.
+        configurator (Configurator): Configurator instance.
+
+    Returns:
+        List[Dict]: List of dictionaries containing evaluation results for the model on each dataset.
     """
     model_evaluation_results = []
     # Iterate over each dataset loader
     for dataset_loader in dataset_loaders:
         # Load prompts
-        dataset_loader.load_prompts(
-            configurator.max_chain_depth, configurator.answers_per_task
+        dataset_loader.load_prompts()
+
+        tasks = dataset_loader.prompts.get_tasks(
+            model_loader.conversation_type,
+            model_loader.template_name,
+            configurator.max_chain_depth,
+            configurator.answers_per_task,
         )
 
         # Create the objects to store the info
         dataset_store = DatasetStore(
-            dataset_loader.name, configurator.max_chain_depth, dataset_loader.tasks
+            dataset_loader.name,
+            configurator.max_chain_depth,
+            tasks,
+            dataset_loader.area,
         )
 
         evaluate_single_model_on_dataset(
@@ -72,16 +86,19 @@ def evaluate_single_model_on_datasets(
 
         # Save results
         save_json(
-            dataset_store.to_brief_summary_json(configurator),
-            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/brief_summary.json",
+            dataset_store.to_brief_summary_json(
+                configurator,
+                model_loader.conversation_type,
+            ),
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_brief_summary.json",
         )
         save_json(
-            dataset_store.to_summary_json(configurator),
-            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/summary.json",
+            dataset_store.to_summary_json(configurator, model_loader.conversation_type),
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_summary.json",
         )
         save_json(
             dataset_store.to_detailed_json(),
-            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/detailed.json",
+            f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_detailed.json",
         )
 
     return model_evaluation_results
@@ -96,10 +113,11 @@ def evaluate_single_model_on_dataset(
     """
     Evaluate a model loader on a single dataset loader.
 
-    :param model_loader: Instance of ModelLoader.
-    :param dataset_loader: Instance of DatasetLoader.
-    :param dataset_store: Instance of DatasetStore.
-    :param max_chain_depth: Maximum chain depth.
+    Args:
+        model_loader (ModelLoader): Instance of ModelLoader.
+        dataset_loader (DatasetLoader): Instance of DatasetLoader.
+        dataset_store (DatasetStore): Instance of DatasetStore.
+        max_chain_depth (int): Maximum chain depth.
     """
     for depth in range(max_chain_depth):
         answers = []
@@ -126,10 +144,11 @@ def generate_answers(
     """
     Generate answers for a given set of answers.
 
-    :param answers: List of answers.
-    :param depth: Depth of the chain..
-    :param dataset_loader: Instance of DatasetLoader.
-    :param model_loader: Instance of ModelLoader.
+    Args:
+        answers (List[Answer]): List of answers.
+        depth (int): Depth of the chain.
+        dataset_loader (DatasetLoader): Instance of DatasetLoader.
+        model_loader (ModelLoader): Instance of ModelLoader.
     """
     if len(answers) == 0:
         return
@@ -137,18 +156,21 @@ def generate_answers(
     if depth == 0:
         print(f"Generating answers for dataset: {dataset_loader.name}")
     else:
-        print(f"Generating answers Chain-Of-Thought nr: {depth}")
+        print(f"Generating answers Chain-Of-Thought depth: {depth}")
     print_progress_bar(0, len(answers))
 
     for i, answer in enumerate(answers, start=1):
         # Generate model responses and timing
-        answer.llm_resp, answer.time_to_gen = model_loader.prompt_llm(answer.prompt)
+        answer.llm_resp, answer.time_to_gen = model_loader.prompt_llm(
+            answer.prompt_instance.prompt
+        )
 
         # Format responses and extract code
         answer.llm_resp_clean = model_loader.clean_response(
-            answer.prompt, answer.llm_resp
+            answer.prompt_instance.prompt, answer.llm_resp
         )
-        answer.code = dataset_loader.extract_code(answer.llm_resp_clean)
+
+        answer.extract_code(model_loader.template_name)
 
         # Update tokens generated
         answer.tokens_generated = model_loader.get_tokens_generated(
@@ -163,9 +185,10 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
     """
     Test answers for a given set of answers.
 
-    :param answers: List of answers.
-    :param depth: Depth of the chain.
-    :param dataset_loader: Instance of DatasetLoader.
+    Args:
+        answers (List[Answer]): List of answers.
+        depth (int): Depth of the chain.
+        dataset_loader (DatasetLoader): Instance of DatasetLoader.
     """
     if len(answers) == 0:
         return
@@ -173,7 +196,7 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
     if depth == 0:
         print(f"Testing answers for dataset: {dataset_loader.name}")
     else:
-        print(f"Testing answers Chain-Of-Thougth nr: {depth}")
+        print(f"Testing answers Chain-Of-Thougth depth: {depth}")
 
     print_progress_bar(0, len(answers))
     for i, answer in enumerate(answers, start=1):
@@ -185,11 +208,14 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
 
 def get_incorrect_answers(tasks: list[Task], depth: int) -> List[Answer]:
     """
-    Get answers that failed atleast one test or had some kind of error for a given depth.
+    Get answers that failed at least one test or had some kind of error for a given depth.
 
-    :param tasks: List of tasks.
-    :param depth: Depth of the chain.
-    :return: List of failed answers.
+    Args:
+        tasks (List[Task]): List of tasks.
+        depth (int): Depth of the chain.
+
+    Returns:
+        List[Answer]: List of failed answers.
     """
     answers = []
     for task in tasks:

@@ -80,17 +80,18 @@ def prepare_quixbugs_python() -> None:
     except Exception as e:
         raise Exception(f"Error deleting .git directory in QuixBugs: {e}")
 
-    # Remove comments in python files
     for file in os.scandir(new_path):
         with open(file, "r") as f:
             data = f.read()
-            # Remove comments from the data
-            cleaned_data = re.sub(r"\"\"\"(.*?)\"\"\"", "", data, flags=re.DOTALL)
-            # Remove excess newlines
-            cleaned_data = re.sub(r"\n{2,}", "\n", cleaned_data)
-            # Write cleaned data back to file
-            with open(file, "w") as f:
-                f.write(cleaned_data)
+
+        # Remove comments from the data
+        cleaned_data = re.sub(r"\"\"\"(.*?)\"\"\"", "", data, flags=re.DOTALL)
+
+        cleaned_data = cleaned_data.strip()
+
+        # Write cleaned data back to file
+        with open(file, "w") as f:
+            f.write(cleaned_data)
 
     print("Python files cleaned successfully.")
 
@@ -127,10 +128,13 @@ def prepare_quixbugs_java() -> None:
         for file in new_path.glob("*.txt"):
             with file.open("r") as f:
                 data = f.read()
-                # Remove comments from the data
-                cleaned_data = re.sub(r"/\*(.*?)\*/", "", data, flags=re.DOTALL)
-                # Remove excess newlines
-                cleaned_data = re.sub(r"\n{2,}", "\n", cleaned_data)
+            # Remove single-line comments
+            cleaned_data = re.sub(r"//.*?\n", "\n", data)
+            # Remove comments from the data
+            cleaned_data = re.sub(r"/\*(.*?)\*/", "", cleaned_data, flags=re.DOTALL)
+            # Reduce excessive newlines
+            cleaned_data = re.sub(r"\n([ \t]*\n)+", "\n", cleaned_data)
+            # cleaned_data = re.sub(r"(\n[ \t]*){3,}", "\n\n", cleaned_data)
             # Write cleaned data back to file
             with file.open("w") as f:
                 f.write(cleaned_data)

@@ -7,6 +7,7 @@ from typing import List, Tuple
 import torch
 import logging
 import time
+import json
 
 
 class ModelLoader:
@@ -14,16 +15,21 @@ class ModelLoader:
     Class for loading and managing language model instances.
     """
 
-    def __init__(self, conf, model_id: str, template_name: str) -> None:
+    def __init__(
+        self, conf, model_id: str, template_name: str, conversation_type: str
+    ) -> None:
         """
         Initialize the ModelLoader.
 
-        :param conf: Configuration object.
-        :param model_id: Identifier for the model.
-        :param template_name: Name of the template file.
+        Args:
+            conf: Configuration object.
+            model_id (str): Identifier for the model.
+            template_name (str): Name of the template file.
+            conversation_type (str): Type of conversation.
         """
         self.model_id = model_id
         self.template_name = template_name
+        self.conversation_type = conversation_type
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
@@ -40,7 +46,7 @@ class ModelLoader:
         """
         Load the model and tokenizer.
         """
-        print("Loading of " + self.name + " model starting...")
+        print(f"Loading {self.name} model for {self.conversation_type} conversation...")
         # Load model and tokenizer on GPU
         model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
@@ -56,8 +62,9 @@ class ModelLoader:
             cache_dir=self.cache_dir,
             chat_template=self.set_chat_template(self.template_name),
         )
-
-        print("Loading of " + self.name + " model complete.\n")
+        print(
+            f"Done loading {self.name} model for {self.conversation_type} conversation!"
+        )
         self.model, self.tokenizer = model, tokenizer
 
     def unload_model_tokenizer(self):
@@ -72,11 +79,13 @@ class ModelLoader:
         """
         Set the chat template.
 
-        :param template_name: Name of the template file.
-        :return: Content of the template file.
+        Args:
+            template_name (str): Name of the template file.
+        Returns:
+            str: Content of the template file.
         """
         content = ""
-        with open("./prompt_templates/" + template_name, "r") as file:
+        with open(f"./chat_templates/{template_name}", "r") as file:
             for line in file:
                 content += line.rstrip().lstrip()
         return content
@@ -85,9 +94,17 @@ class ModelLoader:
         """
         Remove special tokens from the provided string.
 
-        :param no_inst: The string from which to remove special tokens.
-        :return: The string without special tokens.
+        Args:
+            no_inst (str): The string from which to remove special tokens.
+        Returns:
+            str: The string without special tokens.
         """
+        with open("./chat_templates/llama.json") as file:
+            tokens = json.load(file)
+
+        for token in tokens["tokens_to_remove"]:
+            no_inst = no_inst.replace(token, "")
+
         for token in self.tokenizer.all_special_tokens:
             no_inst = no_inst.replace(token, "")
         return no_inst
@@ -95,43 +112,48 @@ class ModelLoader:
     def remove_inst(
         self,
         prompt: List[dict],
-        no_inst: str,
+        answer: str,
     ) -> str:
         """
         Remove instruction from the provided string.
 
-        :param prompt: List of dictionaries representing the prompt.
-        :param no_inst: The string from which to remove instruction.
-        :return: The string without instruction.
+        Args:
+            prompt (List[dict]): List of dictionaries representing the prompt.
+            answer (str): The string from which to remove instruction.
+        Returns:
+            str: The string without instruction.
         """
         inst_enc = self.tokenizer.apply_chat_template(prompt, return_tensors="pt").to(
-            "cuda"
+            self.device
         )
         inst = self.tokenizer.decode(inst_enc[0])
-        updated_responses = no_inst.replace(inst, "")
+        updated_responses = answer.replace(inst, "")
         return updated_responses
 
     def clean_response(self, prompt: List[dict], llm_resp: str) -> str:
         """
         Clean the model response.
 
-        :param prompt: List of dictionaries representing the prompt.
-        :param llm_resp: Model response.
-        :return: Cleaned response.
+        Args:
+            prompt (List[dict]): List of dictionaries representing the prompt.
+            llm_resp (str): Model response.
+        Returns:
+            str: Cleaned response.
         """
         no_inst = self.remove_inst(prompt, llm_resp)
         no_inst = self.remove_special_tokens(no_inst)
         no_inst = no_inst.replace("\t", "    ")
         no_inst = no_inst.replace("\\n", "\n")
-        no_inst = no_inst.strip()
         return no_inst
 
     def get_tokens_generated(self, clean_resp: str) -> int:
         """
         Get the number of tokens generated.
 
-        :param clean_resp: The cleaned model response.
-        :return: Number of tokens generated.
+        Args:
+            clean_resp (str): The cleaned model response.
+        Returns:
+            int: Number of tokens generated.
         """
         return len(self.tokenizer.encode(clean_resp, add_special_tokens=False))
 
@@ -143,8 +165,10 @@ class ModelLoader:
         """
         Prompt the language model.
 
-        :param prompt: List of dictionaries representing the prompt.
-        :return: Tuple containing the model response and total time taken.
+        Args:
+            prompt (List[dict]): List of dictionaries representing the prompt.
+        Returns:
+            Tuple[str, float]: Tuple containing the model response and total time taken.
         """
         tot_time = 0
         batch_completions = []
@@ -153,7 +177,6 @@ class ModelLoader:
         input = self.tokenizer.apply_chat_template(prompt, return_tensors="pt").to(
             self.device
         )
-
         try:
             with torch.no_grad():
                 start = time.time()
@@ -165,6 +188,7 @@ class ModelLoader:
                     temperature=self.temperature,
                     top_p=self.top_p,
                     do_sample=True,
+                    repetition_penalty=1.1,
                     eos_token_id=self.tokenizer.eos_token_id,
                     pad_token_id=self.tokenizer.eos_token_id,
                 )
