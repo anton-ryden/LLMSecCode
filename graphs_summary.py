@@ -37,12 +37,53 @@ def merge_json_files(input_folder, output_file):
     # Write the merged data to the output file
     with open(output_file, "w") as output:
         json.dump(merged_data, output, indent=6)
+
+def plot_errors(result_directory, dataset):
+
+    all_error_info = {}
+
+    # Get the errors of each model and config
+    for json_file in os.listdir(result_directory):
+        filename = os.path.basename(json_file)
+        filename = os.path.splitext(filename)[0]
+        model_name = filename.split('_')[0]
+        if json_file.endswith(".json"):
+            json_file_path = os.path.join(result_directory, json_file)
+            with open(json_file_path) as file:
+                data = json.load(file)
+
+            error_info = {}
+            for config_type, config_data in data.items():
+                for entry in config_data:
+                    if entry["Name"] == dataset:
+                        error_info[config_type] = {}
+
+                        for key, value in entry["Statistics"]["0"].items():
+                            if key.endswith("errors"):
+                                error_info[config_type][key] = value
+
+            all_error_info[model_name] = {}
+            all_error_info[model_name] = error_info
+
+    # Plotting Errors
+    df = pd.DataFrame.from_dict({(i, j): all_error_info[i][j] 
+                             for i in all_error_info.keys() 
+                             for j in all_error_info[i].keys()},
+                            orient='index')
+
+    # Plotting using Pandas plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    df.unstack().plot(kind='bar', ax=ax, width=0.8)
+
+    ax.set_xlabel('Models')
+    ax.set_ylabel('Number of errors')
+    ax.set_title(f'Amount of Errors for {dataset}')
+    ax.legend(title='Errors', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    plt.savefig(f"./graphs/{dataset}_error_plot.png", bbox_inches="tight")
     
 
 def plot_pass_at_k(result_directory, dataset):
-
-    # Adjust fig size
-    fig, ax = plt.subplots(figsize=(12, 6))
 
     all_pass_at_k_info = {}
 
@@ -75,11 +116,11 @@ def plot_pass_at_k(result_directory, dataset):
                              for j in all_pass_at_k_info[i].keys()},
                             orient='index')
 
-# Plotting using Pandas plot
-    fig, ax = plt.subplots()
+    # Plotting using Pandas plot
+    fig, ax = plt.subplots(figsize=(12, 6))
     df.unstack().plot(kind='bar', ax=ax, width=0.8)
 
-    ax.set_xlabel('Models and Configurations')
+    ax.set_xlabel('Models')
     ax.set_ylabel('Pass@k (%)')
     ax.set_title(f'Pass@k Values for {dataset}')
     ax.legend(title='Pass@k', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -103,15 +144,17 @@ if __name__ == "__main__":
                 model_path,
                 default_result_path  + "/merged/" + model_name + "_merged.json",
             )
-    
-    # Define dataset (QuixBugs Python, QuixBugs Java, HumanEval)
-    dataset = "QuixBugs Python"
 
     # Create directory for saving plotting results
     graph_directory = os.path.join(current_file_path, "graphs")
-    os.makedirs(graph_directory, exist_ok=True)        
+    os.makedirs(graph_directory, exist_ok=True)  
+
+    # Define dataset (QuixBugs Python, QuixBugs Java, HumanEval)
+    datasets = ["QuixBugs Python", "HumanEval"]      
     
     # Plot graphs
-    plot_pass_at_k(merged_dir, dataset)
+    for dataset in datasets:
+        plot_pass_at_k(merged_dir, dataset)
+        plot_errors(merged_dir, dataset)
 
     
