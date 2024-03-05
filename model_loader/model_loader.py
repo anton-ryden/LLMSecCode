@@ -33,7 +33,7 @@ class ModelLoader:
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
-        self.max_length = conf.max_length
+        self.max_length = conf.max_length_per_depth
         self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
         self.batch_size = 1
@@ -168,7 +168,7 @@ class ModelLoader:
         Args:
             prompt (List[dict]): List of dictionaries representing the prompt.
         Returns:
-            Tuple[str, float]: Tuple containing the model response and total time taken.
+            Tuple[str, float, float]: Tuple containing the model response, total time taken and vram usage.
         """
         tot_time = 0
         batch_completions = []

@@ -60,6 +60,7 @@ def evaluate_single_model_on_datasets(
     model_evaluation_results = []
     # Iterate over each dataset loader
     for dataset_loader in dataset_loaders:
+        start = time.time()
         # Load prompts
         dataset_loader.load_prompts()
 
@@ -90,16 +91,24 @@ def evaluate_single_model_on_datasets(
 
         dataset_store.update_stats()
 
+        run_time = time.time() - start
+        print(
+            f"Time for generating and testing {dataset_loader.name}: {round(run_time, 1)}s\n"
+        )
+
         # Save results
         save_json(
             dataset_store.to_brief_summary_json(
                 configurator,
                 model_loader.conversation_type,
+                run_time,
             ),
             f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_brief_summary.json",
         )
         save_json(
-            dataset_store.to_summary_json(configurator, model_loader.conversation_type),
+            dataset_store.to_summary_json(
+                configurator, model_loader.conversation_type, run_time
+            ),
             f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_summary.json",
         )
         save_json(
@@ -137,8 +146,6 @@ def evaluate_single_model_on_dataset(
         generate_answers(answers, depth, dataset_loader, model_loader)
 
         test_answers(answers, depth, dataset_loader)
-
-    print()
 
 
 def generate_answers(

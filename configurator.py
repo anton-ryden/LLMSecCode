@@ -18,7 +18,7 @@ class Configurator:
         self.model_dir = "./models"
         self.answers_per_task = 1
         self.max_chain_depth = 1
-        self.max_length = 400
+        self.max_length_per_depth = 400
         self.temperature = 0.8
         self.top_p = 0.95
         self.datasets = ["quixbugs-python"]
@@ -52,10 +52,10 @@ class Configurator:
             help="The number of answers to generate per task.\n Default is %(default)s.",
         )
         parser.add_argument(
-            "--max_length",
+            "--max_length_per_depth",
             type=int,
-            default=self.max_length,
-            help="The maximum lengt of the response from the model.\n Default is %(default)s.",
+            default=self.max_length_per_depth,
+            help="The maximum lengt of the response from the model per depth.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--temperature",
@@ -104,7 +104,7 @@ class Configurator:
                 raise ValueError(f"Template not found: chat_templates/{parts[1]}")
             elif parts[2] not in ["instruction", "infilling"]:
                 raise ValueError(f"The converation type '{parts[2]}' is not supported.")
-            elif f"{parts[1]}.json" not in files:
+            elif f"{parts[1]}.json" not in files and parts[2] == "infilling":
                 raise ValueError(
                     f"If conversation type infilling is used a {parts[1]}.json need to be created."
                 )

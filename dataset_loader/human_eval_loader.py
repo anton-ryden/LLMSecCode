@@ -1,5 +1,5 @@
 import os
-import copy
+
 
 from human_eval.execution import check_correctness
 from human_eval.data import read_problems, HUMAN_EVAL

@@ -1,6 +1,7 @@
 from data_structures.task import Task
 import numpy as np
 
+from configurator import Configurator
 from utils import get_pass_k
 
 
@@ -27,7 +28,7 @@ class DatasetStore:
         self.area = area
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
-        self.time_s = {depth: 0 for depth in range(max_chain_depth)}
+        self.gen_time = {depth: 0 for depth in range(max_chain_depth)}
         self.tokens_generated = {depth: 0 for depth in range(max_chain_depth)}
         self.passed = {depth: 0 for depth in range(max_chain_depth)}
         self.failed = {depth: 0 for depth in range(max_chain_depth)}
@@ -47,7 +48,7 @@ class DatasetStore:
             for depth in range(task.max_chain_depth):
                 self.syntax_errors[depth] += task.syntax_errors[depth]
                 self.other_errors[depth] += task.other_errors[depth]
-                self.time_s[depth] += task.time_to_gen[depth]
+                self.gen_time[depth] += task.time_to_gen[depth]
                 self.tokens_generated[depth] += task.tokens_generated[depth]
                 self.passed[depth] += task.passed[depth]
                 self.failed[depth] += task.failed[depth]
@@ -90,13 +91,16 @@ class DatasetStore:
             "Tasks": [task.detailed_json() for task in self.tasks],
         }
 
-    def to_summary_json(self, conf, conversation_type):
+    def to_summary_json(
+        self, conf: Configurator, conversation_type: str, run_time: float
+    ):
         """
         Convert the dataset store to a brief summary JSON format.
 
         Args:
             conf: Configuration object.
             conversation_type (str): Type of conversation (conversation, completion, infilling).
+            run_time (float): The time it takes to run both the tests and generation.
 
         Returns:
             dict: Brief summary JSON representation of the dataset store.
@@ -105,8 +109,8 @@ class DatasetStore:
             depth: {
                 "Syntax errors": self.syntax_errors[depth],
                 "Other errors": self.other_errors[depth],
-                "Time(sec)": self.time_s[depth],
-                "Tokens generated": self.tokens_generated[depth],
+                "Generation time (sec)": round(self.gen_time[depth], 1),
+                "Tokens generated": round(self.tokens_generated[depth], 1),
                 "Passed": self.passed[depth],
                 "Failed": self.failed[depth],
                 "Correct": self.correct[depth],
@@ -126,7 +130,7 @@ class DatasetStore:
                 [
                     self.syntax_errors[depth],
                     self.other_errors[depth],
-                    self.time_s[depth],
+                    self.gen_time[depth],
                     self.tokens_generated[depth],
                     self.passed[depth],
                     self.failed[depth],
@@ -146,30 +150,34 @@ class DatasetStore:
         return {
             "Name": self.name,
             "Area": self.area,
+            "Total time": round(run_time, 1),
             "Statistics": statistics,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max length": conf.max_length,
+                "Max length": conf.max_length_per_depth,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
                 "Conversation type": conversation_type,
             },
         }
 
-    def to_brief_summary_json(self, conf, conversation_type):
+    def to_brief_summary_json(
+        self, conf: Configurator, conversation_type: str, run_time: float
+    ):
         """
         Convert the dataset store to a brief summary JSON format.
 
         Args:
             conf: Configuration object.
             conversation_type (str): Type of conversation (conversation, completion, infilling).
+            run_time (float): The time it takes to run both the tests and generation.
 
         Returns:
             dict: Brief summary JSON representation of the dataset store.
         """
         total_syntax_errors = sum(self.syntax_errors.values())
         total_other_errors = sum(self.other_errors.values())
-        total_time_s = sum(self.time_s.values())
+        gen_time = sum(self.gen_time.values())
         total_tokens_generated = sum(self.tokens_generated.values())
         total_passed = sum(self.passed.values())
         total_failed = sum(self.failed.values())
@@ -182,9 +190,11 @@ class DatasetStore:
             "Area": self.area,
             "Syntax errors": total_syntax_errors,
             "Other errors": total_other_errors,
-            "Time(sec)": total_time_s,
+            "Total time (sec)": round(run_time, 1),
+            "Testing time (sec)": round(run_time - gen_time, 1),
+            "Generation time (sec)": round(gen_time, 1),
             "Tokens generated": total_tokens_generated,
-            "Tokens/Sec": total_tokens_generated / total_time_s,
+            "Tokens/Sec": round(total_tokens_generated / gen_time, 1),
             "Passed": total_passed,
             "Failed": total_failed,
             "Correct": total_correct,
@@ -192,7 +202,7 @@ class DatasetStore:
             "Avg Pass@1": pass_at_1,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max length": conf.max_length,
+                "Max length": conf.max_length_per_depth,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
                 "Conversation type": conversation_type,
