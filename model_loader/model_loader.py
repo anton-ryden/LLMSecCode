@@ -8,6 +8,10 @@ import torch
 import logging
 import time
 import json
+import psutil
+
+if "cuda" in dir(torch):
+    import torch.cuda as cuda
 
 
 class ModelLoader:
@@ -36,10 +40,10 @@ class ModelLoader:
         self.max_length = conf.max_length_per_depth
         self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
+        self.device = conf.device
         self.batch_size = 1
         self.chat_template = ""
 
-        self.device = "cuda"
         self.name = model_id.split("/")[1]
 
     def load_model_tokenizer(self):
@@ -177,6 +181,7 @@ class ModelLoader:
         input = self.tokenizer.apply_chat_template(prompt, return_tensors="pt").to(
             self.device
         )
+        memory_usage = 0
         try:
             with torch.no_grad():
                 start = time.time()
@@ -194,11 +199,22 @@ class ModelLoader:
                 )
                 tot_time += time.time() - start
                 batch_completions.extend(generated_ids)
-                torch.cuda.empty_cache()
+                if self.device == "cuda":
+                    # Measure VRAM usage
+                    memory_usage = cuda.max_memory_allocated() / (
+                        1024 * 1024 * 1024
+                    )  # GB
+                    print(memory_usage)
+                    torch.cuda.reset_peak_memory_stats()
+                    torch.cuda.empty_cache()
+                else:
+                    memory_usage = psutil.virtual_memory().used / (
+                        1024 * 1024 * 1024
+                    )  # GB
 
         except Exception as e:
             logging.info(e)
 
         response = self.tokenizer.decode(batch_completions[0])
 
-        return response, tot_time
+        return response, tot_time, memory_usage

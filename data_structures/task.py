@@ -30,6 +30,7 @@ class Task:
         self.id = id
         self.prompt_instance = prompt_instance
         self.max_chain_depth = max_chain_depth
+        self.max_memory = 0
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.time_to_gen = {depth: 0 for depth in range(max_chain_depth)}
@@ -68,6 +69,8 @@ class Task:
                 self.other_errors[i] += 1 if answer.other_error else 0
                 self.num_answers[i] += 1
                 self.correct[i] += 1 if answer.failed == 0 and answer.passed > 0 else 0
+                if answer.memory > self.max_memory:
+                    self.max_memory = answer.memory
 
     def detailed_json(self):
         """

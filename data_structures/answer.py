@@ -36,6 +36,7 @@ class Answer:
         self.tokens_generated = 0
         self.passed = 0
         self.failed = 0
+        self.memory = 0
 
     def get_next_chain(self) -> "Answer":
         """

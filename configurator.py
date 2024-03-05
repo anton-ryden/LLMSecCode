@@ -24,6 +24,7 @@ class Configurator:
         self.datasets = ["quixbugs-python"]
         self.chat_template = ""
         self.results_dir = "default"
+        self.device = "cuda"
 
         # Parse command line arguments and check model configurations
         self.parse_args()
@@ -87,6 +88,12 @@ class Configurator:
             type=str,
             default=self.results_dir,
             help="Specify name of folder to save results to.\n Default is %(default)s.",
+        )
+        parser.add_argument(
+            "--device",
+            type=str,
+            default=self.device,
+            help="Specify what device to run on, cpu or cuda for example.\n Default is %(default)s.",
         )
 
         args = parser.parse_args()

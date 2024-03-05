@@ -24,6 +24,7 @@ class DatasetStore:
         """
         self.name = name
         self.max_chain_depth = max_chain_depth
+        self.max_memory = 0
         self.tasks = tasks
         self.area = area
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
@@ -54,6 +55,8 @@ class DatasetStore:
                 self.failed[depth] += task.failed[depth]
                 self.num_answers[depth] += task.num_answers[depth]
                 self.correct[depth] += task.correct[depth]
+                if task.max_memory > self.max_memory:
+                    self.max_memory = task.max_memory
                 if task.answers[depth] and depth == 0:
                     total_answers.append(task.num_answers[depth])
                     correct_answers.append(task.correct[depth])
@@ -151,6 +154,7 @@ class DatasetStore:
             "Name": self.name,
             "Area": self.area,
             "Total time": round(run_time, 1),
+            "Maximum memory usage (GB)": round(self.max_memory, 2),
             "Statistics": statistics,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
@@ -188,6 +192,7 @@ class DatasetStore:
         return {
             "Name": self.name,
             "Area": self.area,
+            "Maximum memory usage (GB)": round(self.max_memory, 2),
             "Syntax errors": total_syntax_errors,
             "Other errors": total_other_errors,
             "Total time (sec)": round(run_time, 1),
