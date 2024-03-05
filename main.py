@@ -1,4 +1,5 @@
 from typing import List, Dict
+import time
 
 from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
@@ -174,7 +175,7 @@ def generate_answers(
 
     for i, answer in enumerate(answers, start=1):
         # Generate model responses and timing
-        answer.llm_resp, answer.time_to_gen = model_loader.prompt_llm(
+        answer.llm_resp, answer.time_to_gen, answer.memory = model_loader.prompt_llm(
             answer.prompt_instance.prompt
         )
 
