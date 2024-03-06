@@ -69,14 +69,14 @@ def prepare_quixbugs_python(path: str) -> None:
     ]
 
     for file_name in files_to_exclude:
-        file_path = new_path / file_name
+        file_path = f"{new_path}/{file_name}"
         try:
-            file_path.unlink()
+            os.remove(file_path)
             print(f"File {file_name} deleted successfully.")
         except Exception as e:
             raise Exception(f"Error deleting file {file_name}: {e}")
 
-    quixbugs_root = SCRIPT_DIR / "QuixBugs/.git"
+    quixbugs_root = f"{SCRIPT_DIR}/{path}/.git"
     try:
         shutil.rmtree(quixbugs_root)
         print(".git directory in QuixBugs deleted successfully.")
@@ -158,6 +158,11 @@ if __name__ == "__main__":
     quixbugs_url = "https://github.com/jkoppel/QuixBugs"
     # Clone QuixBugs
     clone_repository(quixbugs_url, "datasets/APR/QuixBugs")
+
+    # HumanEval Repository URL
+    human_infilling = "https://github.com/openai/human-eval-infilling"
+    # Clone HumanEval infilling
+    clone_repository(human_infilling, "datasets/CG/human-eval-infilling")
 
     # Make changes to QuixBugs Python Folder
     prepare_quixbugs_python("datasets/APR/QuixBugs")
