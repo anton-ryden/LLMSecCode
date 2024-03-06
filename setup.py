@@ -44,11 +44,14 @@ def clone_repository(repo_url: str, dir_name: str) -> None:
     subprocess.run(["git", "clone", repo_url, str(destination_path)], check=True)
 
 
-def prepare_quixbugs_python() -> None:
-    """Prepare QuixBugs directory by copying, renaming, and excluding specific files."""
-    original_path = SCRIPT_DIR / "QuixBugs/python_programs"
-    new_folder_name = "QuixBugs/python_programs_bug"
-    new_path = SCRIPT_DIR / new_folder_name
+def prepare_quixbugs_python(path: str) -> None:
+    """Prepare QuixBugs directory by copying, renaming, and excluding specific files.
+
+    Args:
+        path (str): Path to the quixbugs repo.
+    """
+    original_path = f"{SCRIPT_DIR}/{path}/python_programs"
+    new_path = f"{SCRIPT_DIR}/{path}/python_programs_bug"
 
     print(f"Copying and renaming directory from {original_path} to {new_path}...")
     shutil.copytree(original_path, new_path)
@@ -96,11 +99,15 @@ def prepare_quixbugs_python() -> None:
     print("Python files cleaned successfully.")
 
 
-def prepare_quixbugs_java() -> None:
-    """Prepare QuixBugs directory by copying, renaming, and excluding specific files."""
-    original_path = Path(SCRIPT_DIR) / "QuixBugs" / "java_programs"
-    new_folder_name = Path("QuixBugs") / "java_programs_bug"
-    new_path = Path(SCRIPT_DIR) / new_folder_name
+def prepare_quixbugs_java(path: str) -> None:
+    """Prepare QuixBugs directory by copying, renaming, and excluding specific files.
+
+    Args:
+        path (str): Path to the quixbugs repo.
+    """
+    original_path = f"{SCRIPT_DIR}/{path}/java_programs"
+    new_folder_name = f"{path}/java_programs_bug"
+    new_path = f"{SCRIPT_DIR}/{new_folder_name}"
 
     exclude_files = [
         "Node.java",
@@ -115,45 +122,47 @@ def prepare_quixbugs_java() -> None:
 
         # Move .java files to the destination directory
         java_files = [
-            filename
-            for filename in original_path.glob("*.java")
-            if filename.name not in exclude_files
+            os.path.join(original_path, filename)
+            for filename in os.listdir(original_path)
+            if filename.endswith(".java") and filename not in exclude_files
         ]
         for file in java_files:
             source_path = file
-            destination_path = new_path / (file.stem + ".txt")
+            destination_path = (
+                f"{new_path}/{os.path.splitext(os.path.basename(source_path))[0]}.txt"
+            )
             shutil.copy(source_path, destination_path)
 
         # Remove comments in java files
-        for file in new_path.glob("*.txt"):
-            with file.open("r") as f:
-                data = f.read()
-            # Remove single-line comments
-            cleaned_data = re.sub(r"//.*?\n", "\n", data)
-            # Remove comments from the data
-            cleaned_data = re.sub(r"/\*(.*?)\*/", "", cleaned_data, flags=re.DOTALL)
-            # Reduce excessive newlines
-            cleaned_data = re.sub(r"\n([ \t]*\n)+", "\n", cleaned_data)
-            # cleaned_data = re.sub(r"(\n[ \t]*){3,}", "\n\n", cleaned_data)
-            # Write cleaned data back to file
-            with file.open("w") as f:
-                f.write(cleaned_data)
+        for file in os.listdir(new_path):
+            if file.endswith(".txt"):
+                with open(f"{new_path}/{file}", "r") as f:
+                    data = f.read()
+                # Remove single-line comments
+                cleaned_data = re.sub(r"//.*?\n", "\n", data)
+                # Remove comments from the data
+                cleaned_data = re.sub(r"/\*(.*?)\*/", "", cleaned_data, flags=re.DOTALL)
+                # Reduce excessive newlines
+                cleaned_data = re.sub(r"\n([ \t]*\n)+", "\n", cleaned_data)
+                # cleaned_data = re.sub(r"(\n[ \t]*){3,}", "\n\n", cleaned_data)
+                # Write cleaned data back to file
+                with open(f"{new_path}/{file}", "w") as f:
+                    f.write(cleaned_data)
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        raise Exception(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
     # QuixBugs Repository URL
     quixbugs_url = "https://github.com/jkoppel/QuixBugs"
-
     # Clone QuixBugs
-    clone_repository(quixbugs_url, "QuixBugs")
+    clone_repository(quixbugs_url, "datasets/APR/QuixBugs")
 
     # Make changes to QuixBugs Python Folder
-    prepare_quixbugs_python()
+    prepare_quixbugs_python("datasets/APR/QuixBugs")
 
     # Make changes to QuixBugs Java Folder
-    prepare_quixbugs_java()
+    prepare_quixbugs_java("datasets/APR/QuixBugs")
 
     print("Setup completed successfully.")

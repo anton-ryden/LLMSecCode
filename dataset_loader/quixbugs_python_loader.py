@@ -32,7 +32,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         prompts = PromptsStore(self.area)
 
         # Get all python files in QuixBugs
-        python_directory = "./QuixBugs/python_programs_bug"
+        python_directory = "./datasets/APR/QuixBugs/python_programs_bug"
         python_file_list = os.listdir(python_directory)
 
         for i, file_name in enumerate(python_file_list):
@@ -134,8 +134,8 @@ class QuixBugsPythonLoader(DatasetLoader):
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
         # File paths
-        dynamic_directory = "./QuixBugs/python_programs"
-        test_module_directory = "./QuixBugs/python_testcases"
+        dynamic_directory = "./datasets/APR/QuixBugs/python_programs"
+        test_module_directory = "./datasets/APR/QuixBugs/python_testcases"
         program_path = os.path.join(test_module_directory, f"test_{answer.id}")
         dynamic_file_path = os.path.join(dynamic_directory, answer.id)
 

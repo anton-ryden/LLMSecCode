@@ -31,7 +31,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         prompts = PromptsStore(self.area)
 
         # Get all Java files in QuixBugs director
-        java_directory = "./QuixBugs/java_programs_bug"
+        java_directory = "./datasets/APR/QuixBugs/java_programs_bug"
         java_file_list = os.listdir(java_directory)
 
         for i, file_name in enumerate(java_file_list):
@@ -167,7 +167,7 @@ class QuixBugsJavaLoader(DatasetLoader):
             answer (Answer): Answer object.
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        dynamic_directory = "./QuixBugs/java_programs"
+        dynamic_directory = "./datasets/APR/QuixBugs/java_programs"
 
         try:
             dynamic_file_path = os.path.join(
@@ -192,7 +192,9 @@ class QuixBugsJavaLoader(DatasetLoader):
                 )
 
             before = ""
-            file_path = os.path.join("./QuixBugs/java_programs_bug", answer.id)
+            file_path = os.path.join(
+                "./datasets/APR/QuixBugs/java_programs_bug", answer.id
+            )
 
             # Overwrite to original state, if this is not done is could introduce errors for other answers.
             with open(file_path, "r") as file:
