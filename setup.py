@@ -163,6 +163,7 @@ if __name__ == "__main__":
     human_infilling = "https://github.com/openai/human-eval-infilling"
     # Clone HumanEval infilling
     clone_repository(human_infilling, "datasets/CG/human-eval-infilling")
+    os.system(f"cd {SCRIPT_DIR}/datasets/CG; pip install -e human-eval-infilling")
 
     # Make changes to QuixBugs Python Folder
     prepare_quixbugs_python("datasets/APR/QuixBugs")
