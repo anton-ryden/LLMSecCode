@@ -2,8 +2,9 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
 )
+
+# import transformers
 from transformers.generation import GenerationConfig
-from transformers.utils import logging
 from typing import List, Tuple
 import torch
 import logging
@@ -11,7 +12,8 @@ import time
 import json
 import psutil
 
-#logging.set_verbosity(logging.ERROR)
+# transformers.logging.set_verbosity_error()
+
 if "cuda" in dir(torch):
     import torch.cuda as cuda
 

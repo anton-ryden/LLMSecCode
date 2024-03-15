@@ -48,22 +48,19 @@ class QuixBugsPythonLoader(DatasetLoader):
                     prompts.add_instruct(file_name, file_data, "python")
 
                     lines = file_data.split("\n")
-                    # Find the index of the first line that starts with "def"
-                    first_def_index = next(
-                        (i for i, line in enumerate(lines) if line.startswith("def")),
-                        None,
-                    )
-                    # Join all lines up to and including the first line that starts with "def"
-                    first_line = "\n".join(
-                        lines[: first_def_index + 1]
-                        if first_def_index is not None
-                        else lines
-                    )
 
-                    prompts.add_completion(file_name, first_line)
+                    # Regular expression pattern to match the end of a docstring
+                    docstring_end_pattern = r'"""([^"]*)"""'
+                    # Find the end of the docstring
+                    docstring_end_match = re.search(
+                        docstring_end_pattern, file_data, re.DOTALL
+                    )
+                    prefix = file_data[: docstring_end_match.end()]
+
+                    prompts.add_completion(file_name, prefix)
 
                     last_line = "\n".join(lines[len(lines) - 1 :])
-                    prompts.add_infilling(file_name, first_line, last_line)
+                    prompts.add_infilling(file_name, prefix, last_line)
                 else:
                     logging.error(f"'{file_path}' is not a file.")
             except Exception as e:

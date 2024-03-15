@@ -163,16 +163,42 @@ def prepare_quixbugs_python(path: str) -> None:
 
     for file in os.scandir(new_path):
         with open(file, "r") as f:
-            data = f.read()
+            content = f.read()
+        # Regular expression patterns to match function and docstring
+        function_pattern = r"def\s+\w+\s*\([^)]*\)\s*:"
+        docstring_pattern = r'"""[^"]*"""'
 
-        # Remove comments from the data
-        cleaned_data = re.sub(r"\"\"\"(.*?)\"\"\"", "", data, flags=re.DOTALL)
+        # Find function definition and its associated docstring
+        function_match = re.search(function_pattern, content)
+        docstring_match = re.search(docstring_pattern, content)
 
-        cleaned_data = cleaned_data.strip()
+        if function_match and docstring_match:
+            function_start = function_match.start()
+            function_end = function_match.end()
+            docstring_start = docstring_match.start()
+            docstring_end = docstring_match.end()
+
+            function_str = content[function_start:function_end]
+            docstring_str = content[docstring_start:docstring_end]
+
+            # Indent each line in the docstring
+            indented_docstring = "\n" + "\n".join(
+                ["    " + line.strip() for line in docstring_str.split("\n")]
+            )
+
+            # Rearrange content
+            rearranged_content = (
+                content[:function_start]
+                + function_str
+                + indented_docstring
+                + content[function_end:docstring_start]
+                + content[docstring_end:]
+            )
+            rearranged_content = rearranged_content.strip()
 
         # Write cleaned data back to file
         with open(file, "w") as f:
-            f.write(cleaned_data)
+            f.write(rearranged_content)
 
     print("Python files cleaned successfully.")
 
