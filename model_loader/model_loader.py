@@ -43,6 +43,7 @@ class ModelLoader:
         self.device = conf.device
         self.batch_size = 1
         self.chat_template = ""
+        self.remote_code = conf.remote_code
 
         self.name = model_id.split("/")[1]
 
@@ -55,7 +56,7 @@ class ModelLoader:
         model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
             device_map=self.device,
-            trust_remote_code=True,
+            trust_remote_code=self.remote_code,
             cache_dir=self.cache_dir,
         ).eval()
 
@@ -204,7 +205,6 @@ class ModelLoader:
                     memory_usage = cuda.max_memory_allocated() / (
                         1024 * 1024 * 1024
                     )  # GB
-                    print(memory_usage)
                     torch.cuda.reset_peak_memory_stats()
                     torch.cuda.empty_cache()
                 else:

@@ -25,6 +25,7 @@ class Configurator:
         self.chat_template = ""
         self.results_dir = "default"
         self.device = "cuda"
+        self.remote_code = True
 
         # Parse command line arguments and check model configurations
         self.parse_args()
@@ -94,6 +95,12 @@ class Configurator:
             type=str,
             default=self.device,
             help="Specify what device to run on, cpu or cuda for example.\n Default is %(default)s.",
+        )
+        parser.add_argument(
+            "--remote_code",
+            type=bool,
+            default=self.remote_code,
+            help="If you want to run remote code or not. Running remote code is a security risk so make sure you are in a sandbox/safe enviroment.",
         )
 
         args = parser.parse_args()
