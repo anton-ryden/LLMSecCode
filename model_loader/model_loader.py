@@ -3,6 +3,9 @@ from transformers import (
     AutoTokenizer,
 )
 from transformers.generation import GenerationConfig
+from transformers.utils import logging
+
+logging.set_verbosity(logging.ERROR)
 from typing import List, Tuple
 import torch
 import logging
