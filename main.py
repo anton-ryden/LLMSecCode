@@ -4,7 +4,7 @@ import time
 from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
-from utils import save_json, print_progress_bar
+from utils.framework_utils import save_json, print_progress_bar
 from data_structures.dataset_store import DatasetStore
 from data_structures.task import Task
 from data_structures.answer import Answer

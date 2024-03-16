@@ -5,6 +5,7 @@ from dataset_loader.dataset_loader import DatasetLoader
 from dataset_loader.quixbugs_python_loader import QuixBugsPythonLoader
 from dataset_loader.quixbugs_java_loader import QuixBugsJavaLoader
 from dataset_loader.human_eval_loader import HumanEvalLoader
+from dataset_loader.llmvul_loader import llmvulLoader
 from model_loader.model_loader import ModelLoader
 
 
@@ -21,7 +22,7 @@ class Configurator:
         self.max_length_per_depth = 400
         self.temperature = 0.8
         self.top_p = 0.95
-        self.datasets = ["quixbugs-python"]
+        self.datasets = ["llm-vul"]
         self.chat_template = ""
         self.results_dir = "default"
         self.device = "cuda"
@@ -138,6 +139,8 @@ class Configurator:
                 dataset_loaders.append(QuixBugsJavaLoader())
             elif dataset == "human_eval":
                 dataset_loaders.append(HumanEvalLoader())
+            elif dataset == "llm-vul":
+                dataset_loaders.append(llmvulLoader())
             else:
                 raise ValueError(f"Invalid dataset: {dataset}")
 

@@ -78,7 +78,7 @@ class QuixBugsJavaLoader(DatasetLoader):
 
     def run_gradle_test(self, class_name: str) -> Tuple[int, int, bool]:
         """
-        Runs Gradle te""" """sts for a specified Java class.
+        Runs Gradle tests for a specified Java class.
 
         Args:
             class_name (str): The name of the Java class to run tests for.

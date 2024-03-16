@@ -11,7 +11,7 @@ import time
 import json
 import psutil
 
-logging.set_verbosity(logging.ERROR)
+#logging.set_verbosity(logging.ERROR)
 if "cuda" in dir(torch):
     import torch.cuda as cuda
 

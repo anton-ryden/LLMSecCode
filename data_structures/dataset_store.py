@@ -2,7 +2,7 @@ from data_structures.task import Task
 import numpy as np
 
 from configurator import Configurator
-from utils import get_pass_k
+from utils.framework_utils import get_pass_k
 
 
 class DatasetStore:
