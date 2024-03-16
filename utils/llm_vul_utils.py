@@ -67,107 +67,12 @@ cve_int_to_name ={
     1003:'Netty-2'
 }
 
-def remove_multiline_comment(code):
-    # The comment is like 
-    # /* BUG : 
-    # *    some code
-    # * FIXED: 
-    # */
-    # remove the comment /* BUG : ... */
-    code = re.sub(r'/\* BUG :.*?\*/', '', code, flags=re.DOTALL)
-    # replace @SuppressWarnings({"unchecked", "rawtypes"})  with ""
-    # code = re.sub(r'@SuppressWarnings\(\{"unchecked", "rawtypes"\}\)', '', code) # for vul4j-57
-    
-    return code
-
-    
-def find_first_bracket(input, output):
-    output = output.split('\n')
-    input = input.split('\n')
-    no_comment_output = [line for line in output if not line.strip().startswith('//')]
-    no_comment_input= [line for line in input if not line.strip().startswith('//')]
-    output = '\n'.join(no_comment_output)
-    input = '\n'.join(no_comment_input)
-    stack = ['{']
-    if '{' in output:
-        start_index = output.index('{')
-        patch = output[: start_index + 1]
-        for c in output[start_index + 1: ]:
-            patch += c
-            if c == '}':
-                if len(stack) == 0:
-                    return output
-                top = stack.pop()
-                if top != '{':
-                    return ''
-                if len(stack) == 0:
-                    if len(patch) < len(input):
-                        # @SuppressWarnings({ "unchecked", "rawtypes" }
-                        continue
-                    return patch.strip()
-            elif c == '{':
-                stack.append(c)
-        return ''
-    else:
-        return output
-
-
-# def find_first_bracket(output):
-#     output = output.split('\n')
-#     no_comment_output = [line for line in output if not line.strip().startswith('//')]
-#     output = '\n'.join(no_comment_output)
-#     stack = ['{']
-#     if '{' in output:
-#         start_index = output.index('{')
-#         patch = output[: start_index + 1]
-#         for c in output[start_index + 1: ]:
-#             patch += c
-#             if c == '}':
-#                 top = stack.pop()
-#                 if top != '{':
-#                     return ''
-#                 if len(stack) == 0:
-#                     return patch.strip()
-#             elif c == '{':
-#                 stack.append(c)
-#         return ''
-#     else:
-#         return output
-
-def dedent_the_whole_method(lines, suffix):
-    whole_lines = lines
-    if suffix is not  None:
-        whole_lines = lines+suffix
-    min_indent_len= 1000000
-    for this_line in whole_lines:
-        j=0
-        while(j<len(this_line) and len(this_line[j].strip()) == 0):
-            # print(j,this_line[j])
-            # # and 
-            # print(len(this_line[j].strip()))
-            j+=1
-        if j < min_indent_len:
-            min_indent_len = j
-    new_lines = []
-    for each_line in lines:
-        new_lines.append(each_line[min_indent_len:])
-    new_suffix = []
-    if suffix is not None:
-        for suffix_line in suffix:
-            new_suffix.append(suffix_line[min_indent_len:])
-    return new_lines, new_suffix
-
-
 
 def vul4j_compile_java_file(working_directory, cmd):
-    #print(working_directory)
-    #print( cmd)
     
     cmd = cmd.split()
-    # p3 = subprocess.Popen(cmd, cwd=working_directory,stdout=subprocess.PIPE)
     p3 = subprocess.Popen(cmd, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p3.wait()
-    # out3, err = p3.communicate()
     compile_result_txt = os.path.join(working_directory, "VUL4J","compile_result.txt")
     with open(compile_result_txt, "r") as f:
         compile_result = f.read()
@@ -175,9 +80,6 @@ def vul4j_compile_java_file(working_directory, cmd):
         return True
     else:
         return False
-    # print( out3)
-    # print(err)
-    # output3 = out3.decode('utf-8', 'ignore').strip()
 
     
     
@@ -195,7 +97,6 @@ def vul4j_test_java_file(working_directory, cmd):
     time_elapse = time.time() - time_start
     if p4.returncode == -9 or  time_elapse > timeout_sec:
         return 2
-    # p4.wait()
     test_result_json = os.path.join(working_directory, "VUL4J","testing_results.json")
     with open(test_result_json, "r") as f:
         test_result = json.load(f)
@@ -205,7 +106,6 @@ def vul4j_test_java_file(working_directory, cmd):
         return 1
     else:
         return 0
-    # '''
 
 
 
@@ -258,7 +158,6 @@ def cve_test_java_file(working_directory, cmd):
     
 
 def extract_correct_method_code(vul_id,  trans):
-    #print("extracting correct method code for {}".format(vul_id))
     VUL_FOLDER = os.path.join(LLM_VUL_DIR, 'VJBench-trans', vul_id)
     buggy_loc_name = "structure_change_only"
     buggy_file = os.path.join(VUL_FOLDER, "{}_code_structure_change_only.java".format(vul_id))
@@ -269,12 +168,9 @@ def extract_correct_method_code(vul_id,  trans):
         print("buggy file does not exist",buggy_file)
         return None, None, False
     bug_location_file = os.path.join(VUL_FOLDER, "buggyline_location.json")
-    # if trans== "rename_only":
-    #     bug_location_file = os.path.join(VUL_FOLDER, "rename_mutation.json") 
     if not os.path.exists(bug_location_file):
         print("bug locaion file does not exist",bug_location_file)
         return None, None, False
-    # read the bug location file
     with open(bug_location_file, 'r') as f:
         buggy_line_dict = json.load(f) 
     
@@ -284,7 +180,6 @@ def extract_correct_method_code(vul_id,  trans):
         buggy_line_end = buggy_line_start
     else:
         buggy_line_end = buggy_line_list[0][1]
-    # return the code until before the buggy line and after the buggy line
 
     with open(buggy_file, 'r') as f:
         lines = f.readlines()
