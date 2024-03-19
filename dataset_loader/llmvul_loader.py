@@ -9,7 +9,6 @@ from data_structures.prompt_store import PromptsStore
 from utils.llm_vul_utils import *
 
 
-
 class llmvulLoader(DatasetLoader):
     """
     Class for loading and testing the dataset llm-vul.
@@ -41,53 +40,62 @@ class llmvulLoader(DatasetLoader):
 
         java_directory = os.path.join(LLM_VUL_DIR, "VJBench-trans")
         entries = os.listdir(java_directory)
-        java_dir_list = [entry for entry in entries if os.path.isdir(os.path.join(java_directory, entry))]
+        java_dir_list = [
+            entry
+            for entry in entries
+            if os.path.isdir(os.path.join(java_directory, entry))
+        ]
 
         for i, dir in enumerate(java_dir_list):
             vul_id = dir
             dir = os.path.join(java_directory, dir)
-            if i == 100: break
+            if i == 1:
+                break
             for file_name in os.listdir(dir):
-                if file_name.endswith("transformation.java") or file_name.endswith("original_method.java"):
-                    if vul_id != "VUL4J-53":
-                    #if vul_id == "Halo-1":
-                        try:
-                            trans = file_name.split("_")[1]
-                            with open(os.path.join(dir, "buggyline_location.json"), "r") as f:
-                                buggyline_data = json.load(f)
-            
-                            if trans == "full":
-                                trans = "rename+code_structure"
-                            bug_start = buggyline_data[f"{trans}"][0][0]
-                            bug_end = buggyline_data[f"{trans}"][0][1]
+                if file_name.endswith("transformation.java") or file_name.endswith(
+                    "original_method.java"
+                ):
+                    # if vul_id != "VUL4J-53":
+                    # if vul_id == "Halo-1":
+                    try:
+                        trans = file_name.split("_")[1]
+                        with open(
+                            os.path.join(dir, "buggyline_location.json"), "r"
+                        ) as f:
+                            buggyline_data = json.load(f)
 
-                            file_path_full = os.path.join(dir, file_name)
-                            if os.path.isfile(file_path_full):
-                                # Read the content of each Java file and create prompts
-                                with open(file_path_full, "r") as file:
-                                    file_data = file.read().strip()
+                        if trans == "full":
+                            trans = "rename+code_structure"
+                        bug_start = buggyline_data[f"{trans}"][0][0]
+                        bug_end = buggyline_data[f"{trans}"][0][1]
 
-                                prompts.add_instruct(file_name, file_data, "java")
+                        file_path_full = os.path.join(dir, file_name)
+                        if os.path.isfile(file_path_full):
+                            # Read the content of each Java file and create prompts
+                            with open(file_path_full, "r") as file:
+                                file_data = file.read().strip()
 
-                                # Split the Java file content into lines
-                                lines = file_data.split("\n")
+                            prompts.add_instruct(file_name, file_data, "java")
 
-                                # Create a new list containing lines up to that index, otherwise containing all lines
-                                prefix_lines = (
-                                    lines[:bug_start-1] if bug_start is not None else lines
-                                )
-                                suffix_lines = (
-                                    lines[bug_end:]
-                                )
-                                prefix = "\n".join(prefix_lines)
-                                suffix = "\n".join(suffix_lines)
+                            # Split the Java file content into lines
+                            lines = file_data.split("\n")
 
-                                prompts.add_completion(file_name, prefix)
-                                prompts.add_infilling(file_name, prefix, suffix)
-                            else:
-                                logging.error(f"'{file_path_full}' is not a file.")
-                        except Exception as e:
-                            logging.error(f"Error reading file '{file_name}': {str(e)}")
+                            # Create a new list containing lines up to that index, otherwise containing all lines
+                            prefix_lines = (
+                                lines[: bug_start - 1]
+                                if bug_start is not None
+                                else lines
+                            )
+                            suffix_lines = lines[bug_end:]
+                            prefix = "\n".join(prefix_lines)
+                            suffix = "\n".join(suffix_lines)
+
+                            prompts.add_completion(file_name, prefix)
+                            prompts.add_infilling(file_name, prefix, suffix)
+                        else:
+                            logging.error(f"'{file_path_full}' is not a file.")
+                    except Exception as e:
+                        logging.error(f"Error reading file '{file_name}': {str(e)}")
 
         print(f"{self.name} prompts loaded\n")
         self.prompts = prompts
@@ -113,7 +121,6 @@ class llmvulLoader(DatasetLoader):
         if trans == "full":
             trans = "rename+code_structure"
 
-
         with open(info_json, "r") as f:
             all_info_list = json.load(f)
 
@@ -122,7 +129,7 @@ class llmvulLoader(DatasetLoader):
 
                 is_vul4j = vul_id.startswith("VUL")
                 buggy_file_path = info["buggy_file"]
-                
+
                 buggy_method_start = info["buggy_method_with_comment"][0][0]
                 buggy_method_end = info["buggy_method_with_comment"][0][1]
 
@@ -138,37 +145,44 @@ class llmvulLoader(DatasetLoader):
                     test_cmd = vjbench_info[vul_id]["test_cmd"]
                     b_path = vjbench_info[vul_id]["buggy_file_path"]
                     restore_cmd = f"git checkout HEAD {b_path}"
-                    p =  subprocess.Popen(restore_cmd.split(), cwd=project_path,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    p = subprocess.Popen(
+                        restore_cmd.split(),
+                        cwd=project_path,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
                     p.wait()
 
-                buggy_file_path = os.path.join(project_path,buggy_file_path)
+                buggy_file_path = os.path.join(project_path, buggy_file_path)
 
                 with open(buggy_file_path, "r") as f:
                     lines = f.readlines()
-                
+
                 generated_code = answer.code
 
                 if trans != "original" and trans != "structure_change_only":
-                    generated_code = translate_code(generated_code,vul_id)
+                    generated_code = translate_code(generated_code, vul_id)
 
                 with open(buggy_file_path, "w") as f:
-                    f.writelines(lines[:buggy_method_start-1])
+                    f.writelines(lines[: buggy_method_start - 1])
                     f.write(generated_code)
                     f.writelines(lines[buggy_method_end:])
-                
+
                 res = 0
                 vjbench_res = 0
-                
+
                 if is_vul4j:
                     succ = vul4j_compile_java_file(project_path, compile_cmd)
                 else:
                     succ = cve_compile_java_file(project_path, compile_cmd)
-                
+
                 if succ:
                     if is_vul4j:
                         res = vul4j_test_java_file(project_path, test_cmd)
-                        testlog_file = os.path.join(VUL4J_DIR, vul_id, "VUL4J", "testing_results.json")
-                        with open(testlog_file, 'r') as file:
+                        testlog_file = os.path.join(
+                            VUL4J_DIR, vul_id, "VUL4J", "testing_results.json"
+                        )
+                        with open(testlog_file, "r") as file:
                             result_data = json.load(file)
 
                     else:
@@ -182,13 +196,17 @@ class llmvulLoader(DatasetLoader):
                     if res == 2 or vjbench_res == 2:
                         answer.other_error = True
                         answer.error_message = "test_timeout"
-                
-                    answer.passed = result_data["tests"]["overall_metrics"]["number_passing"]
-                    answer.failed = result_data["tests"]["overall_metrics"]["number_failing"]
+
+                    answer.passed = result_data["tests"]["overall_metrics"][
+                        "number_passing"
+                    ]
+                    answer.failed = result_data["tests"]["overall_metrics"][
+                        "number_failing"
+                    ]
 
                 else:
                     answer.error_message = "compile failed"
                     answer.other_error = True
-                
+
                 with open(buggy_file_path, "w") as f:
                     f.writelines(lines)
