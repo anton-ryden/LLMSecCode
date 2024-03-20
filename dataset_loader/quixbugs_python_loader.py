@@ -6,6 +6,7 @@ import re
 from dataset_loader.dataset_loader import DatasetLoader
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
+from utils.framework_utils import print_progress_bar
 
 
 class QuixBugsPythonLoader(DatasetLoader):
@@ -119,7 +120,7 @@ class QuixBugsPythonLoader(DatasetLoader):
             answer.error_message = "Timed out"
             subprocess.run(["pkill", "-f", pytest_command])
 
-    def test_code(self, answer: Answer) -> None:
+    def test_code(self, answers: list[Answer]) -> None:
         """
         Test the provided answer.
 
@@ -129,29 +130,33 @@ class QuixBugsPythonLoader(DatasetLoader):
             None
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
+        print_progress_bar(0, len(answers))
 
-        # File paths
-        dynamic_directory = "./datasets/APR/QuixBugs/python_programs"
-        test_module_directory = "./datasets/APR/QuixBugs/python_testcases"
-        program_path = os.path.join(test_module_directory, f"test_{answer.id}")
-        dynamic_file_path = os.path.join(dynamic_directory, answer.id)
+        for i, answer in enumerate(answers, start=1):
+            # File paths
+            dynamic_directory = "./datasets/APR/QuixBugs/python_programs"
+            test_module_directory = "./datasets/APR/QuixBugs/python_testcases"
+            program_path = os.path.join(test_module_directory, f"test_{answer.id}")
+            dynamic_file_path = os.path.join(dynamic_directory, answer.id)
 
-        # Create the directory if it doesn't exist and write answer to file
-        os.makedirs(dynamic_directory, exist_ok=True)
-        with open(dynamic_file_path, "w") as file:
-            file.write(answer.code)
+            # Create the directory if it doesn't exist and write answer to file
+            os.makedirs(dynamic_directory, exist_ok=True)
+            with open(dynamic_file_path, "w") as file:
+                file.write(answer.code)
 
-        # Check syntax errors and run tests on the program
-        if answer.code != "":
-            answer.syntax_error, answer.error_message = super().check_python_syntax(
-                answer.code
-            )
-        else:
-            answer.syntax_error = False
-            answer.other_error = True
-            answer.error_message = "Empty file, could not extract any code"
+            # Check syntax errors and run tests on the program
+            if answer.code != "":
+                answer.syntax_error, answer.error_message = super().check_python_syntax(
+                    answer.code
+                )
+            else:
+                answer.syntax_error = False
+                answer.other_error = True
+                answer.error_message = "Empty file, could not extract any code"
 
-        if answer.syntax_error == False:
-            self.run_tests(program_path, answer)
-        else:
-            answer.failed_count, answer.passed_count = 0, 0
+            if answer.syntax_error == False:
+                self.run_tests(program_path, answer)
+            else:
+                answer.failed_count, answer.passed_count = 0, 0
+                
+            print_progress_bar(i, len(answers))

@@ -37,7 +37,7 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def test_code(self, answee: Answer) -> None:
+    def test_code(self, answers: list[Answer]) -> None:
         """
         Abstract method to test code answers.
 

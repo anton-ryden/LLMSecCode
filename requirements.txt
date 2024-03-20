@@ -4,3 +4,4 @@ auto-gptq==0.6.0
 pytest==6.2.5
 optimum
 human-eval
+bandit

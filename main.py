@@ -212,11 +212,8 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
     else:
         print(f"Testing answers Chain-Of-Thougth depth: {depth}")
 
-    print_progress_bar(0, len(answers))
-    for i, answer in enumerate(answers, start=1):
-        dataset_loader.test_code(answer)
-
-        print_progress_bar(i, len(answers))
+    
+    dataset_loader.test_code(answers)
     print()
 
 

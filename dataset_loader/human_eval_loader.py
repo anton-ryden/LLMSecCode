@@ -8,6 +8,7 @@ from dataset_loader.dataset_loader import DatasetLoader
 from data_structures.task import Task
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
+from utils.framework_utils import print_progress_bar
 
 
 class HumanEvalLoader(DatasetLoader):
@@ -49,33 +50,37 @@ class HumanEvalLoader(DatasetLoader):
         print(f"{self.name} prompts loaded.\n")
         self.prompts = prompts
 
-    def test_code(self, answer: Answer) -> None:
+    def test_code(self, answers: list[Answer]) -> None:
         """
         Test the provided answer.
 
         Args:
             answer (Answer): Answer object.
         """
-        os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        run_eval_list = defaultdict(list)
-        run_eval_list = run_eval(answer.id, answer.code, run_eval_list)
+        print_progress_bar(0, len(answers))
+        for i, answer in enumerate(answers, start=1):
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            run_eval_list = defaultdict(list)
+            run_eval_list = run_eval(answer.id, answer.code, run_eval_list)
 
-        if run_eval_list[answer.id][0][1]["passed"]:
-            answer.passed = 1
-        else:
-            answer.failed = 1
-
-        # If it contains anything other than this it is a syntax error
-        result = run_eval_list[answer.id][0][1]["result"]
-        if result == "failed: " or result == "passed":
-            answer.syntax_error = False
-
-        else:
-            if result == "timed out":
-                answer.other_error = True
+            if run_eval_list[answer.id][0][1]["passed"]:
+                answer.passed = 1
             else:
-                answer.syntax_error = True
-            answer.error_message = result
+                answer.failed = 1
+
+            # If it contains anything other than this it is a syntax error
+            result = run_eval_list[answer.id][0][1]["result"]
+            if result == "failed: " or result == "passed":
+                answer.syntax_error = False
+
+            else:
+                if result == "timed out":
+                    answer.other_error = True
+                else:
+                    answer.syntax_error = True
+                answer.error_message = result
+                
+            print_progress_bar(i, len(answers))
 
 
 def run_eval(task_id, answer, results):

@@ -8,6 +8,7 @@ import subprocess
 from dataset_loader.dataset_loader import DatasetLoader
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
+from utils.framework_utils import print_progress_bar
 
 
 class QuixBugsJavaLoader(DatasetLoader):
@@ -159,7 +160,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         os.chdir(original_dir)
         return passed_tests, failed_tests, False
 
-    def test_code(self, answer: Answer) -> None:
+    def test_code(self, answers: list[Answer]) -> None:
         """
         Tests the provided answer.
 
@@ -168,40 +169,44 @@ class QuixBugsJavaLoader(DatasetLoader):
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         dynamic_directory = "./datasets/APR/QuixBugs/java_programs"
+        print_progress_bar(0, len(answers))
 
-        try:
-            dynamic_file_path = os.path.join(
-                dynamic_directory, answer.id.replace(".txt", ".java")
-            )
-
-            with open(dynamic_file_path, "w") as file:
-                file.write(answer.code)
-
-            if answer.code != "":
-                answer.syntax_error, answer.error_message = super().check_java_syntax(
-                    dynamic_file_path
-                )
-            else:
-                answer.other_error = True
-                answer.error_message = "Empty file, could not extract any code"
-
-            if answer.syntax_error != True and answer.other_error != True:
-                class_name = answer.id.split(".")[0]
-                answer.passed, answer.failed, answer.syntax_error = (
-                    self.run_gradle_test(class_name)
+        for i, answer in enumerate(answers, start=1):
+            try:
+                dynamic_file_path = os.path.join(
+                    dynamic_directory, answer.id.replace(".txt", ".java")
                 )
 
-            before = ""
-            file_path = os.path.join(
-                "./datasets/APR/QuixBugs/java_programs_bug", answer.id
-            )
+                with open(dynamic_file_path, "w") as file:
+                    file.write(answer.code)
 
-            # Overwrite to original state, if this is not done is could introduce errors for other answers.
-            with open(file_path, "r") as file:
-                before = file.read()
+                if answer.code != "":
+                    answer.syntax_error, answer.error_message = super().check_java_syntax(
+                        dynamic_file_path
+                    )
+                else:
+                    answer.other_error = True
+                    answer.error_message = "Empty file, could not extract any code"
 
-            with open(dynamic_file_path, "w") as file:
-                file.write(before)
+                if answer.syntax_error != True and answer.other_error != True:
+                    class_name = answer.id.split(".")[0]
+                    answer.passed, answer.failed, answer.syntax_error = (
+                        self.run_gradle_test(class_name)
+                    )
 
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+                before = ""
+                file_path = os.path.join(
+                    "./datasets/APR/QuixBugs/java_programs_bug", answer.id
+                )
+
+                # Overwrite to original state, if this is not done is could introduce errors for other answers.
+                with open(file_path, "r") as file:
+                    before = file.read()
+
+                with open(dynamic_file_path, "w") as file:
+                    file.write(before)
+
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+            
+            print_progress_bar(i, len(answers))
