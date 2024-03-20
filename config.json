@@ -1,0 +1,26 @@
+{
+    "paths": {
+        "VUL4J_ROOT": "/home/antovis/Documents/ModelEvalKit/datasets/APR/vul4j/",
+        "JAVA7_PATH": "/usr/lib/jvm/jdk1.7.0_80",
+        "JAVA8_PATH": "/usr/lib/jvm/jdk1.8.0_391"
+    },
+    "testing_configs" : {
+        "model_configs": [
+            "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama:infilling",
+            "TheBloke/CodeLlama-7B-Instruct-GPTQ:llama:instruction",
+            "TheBloke/deepseek-coder-6.7B-instruct-GPTQ:deepseek_coder:infilling",
+            "TheBloke/deepseek-coder-6.7B-instruct-GPTQ:deepseek_coder:instruction"
+        ],
+        "model_dir": "./models",
+        "answers_per_task": 1,
+        "max_chain_depth": 1,
+        "max_length_per_depth": 2000,
+        "temperature": 0.8,
+        "top_p": 0.95,
+        "datasets": ["llm-vul"],
+        "chat_template": "",
+        "results_dir": "default",
+        "device": "cuda",
+        "remote_code": true
+    }
+}

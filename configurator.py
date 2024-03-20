@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 from typing import List
 from dataset_loader.dataset_loader import DatasetLoader
 from dataset_loader.quixbugs_python_loader import QuixBugsPythonLoader
@@ -13,20 +14,11 @@ class Configurator:
     def __init__(self):
         """Initialize the Configurator with default configurations."""
         # Default configuration values
-        self.model_configs = [
-            "TheBloke/CodeLlama-7B-GPTQ:llama:instruction",
-        ]
-        self.model_dir = "./models"
-        self.answers_per_task = 1
-        self.max_chain_depth = 1
-        self.max_length_per_depth = 400
-        self.temperature = 0.8
-        self.top_p = 0.95
-        self.datasets = ["llm-vul"]
-        self.chat_template = ""
-        self.results_dir = "default"
-        self.device = "cuda"
-        self.remote_code = True
+        with open("./config.json", "r") as f:
+            testing_configs = json.load(f)["testing_configs"]
+
+        for key, value in testing_configs.items():
+            setattr(self, key, value)
 
         # Parse command line arguments and check model configurations
         self.parse_args()
