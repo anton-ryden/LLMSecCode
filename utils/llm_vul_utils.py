@@ -125,6 +125,8 @@ def vul4j_compile_java_file(working_directory, cmd):
         )
     except Exception:
         subprocess.run(["pkill", "-f", cmd])
+        return False
+
     compile_result_txt = os.path.join(working_directory, "VUL4J", "compile_result.txt")
     with open(compile_result_txt, "r") as f:
         compile_result = f.read()

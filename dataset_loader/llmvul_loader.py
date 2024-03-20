@@ -47,16 +47,13 @@ class llmvulLoader(DatasetLoader):
         ]
 
         for i, dir in enumerate(java_dir_list):
-            vul_id = dir
             dir = os.path.join(java_directory, dir)
-            if i == 1:
+            if i == 1000:
                 break
             for file_name in os.listdir(dir):
                 if file_name.endswith("transformation.java") or file_name.endswith(
                     "original_method.java"
                 ):
-                    # if vul_id != "VUL4J-53":
-                    # if vul_id == "Halo-1":
                     try:
                         trans = file_name.split("_")[1]
                         with open(
@@ -179,6 +176,10 @@ class llmvulLoader(DatasetLoader):
                 if succ:
                     if is_vul4j:
                         res = vul4j_test_java_file(project_path, test_cmd)
+                        if res == 2:
+                            answer.other_error = True
+                            answer.error_message = "test_timeout"
+                            return
                         testlog_file = os.path.join(
                             VUL4J_DIR, vul_id, "VUL4J", "testing_results.json"
                         )
