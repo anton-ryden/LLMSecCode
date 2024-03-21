@@ -79,7 +79,7 @@ class HumanEvalLoader(DatasetLoader):
                 else:
                     answer.syntax_error = True
                 answer.error_message = result
-                
+
             print_progress_bar(i, len(answers))
 
 

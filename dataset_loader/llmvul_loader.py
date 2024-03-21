@@ -10,7 +10,7 @@ from utils.llm_vul_utils import *
 from utils.framework_utils import print_progress_bar
 
 
-class llmvulLoader(DatasetLoader):
+class LlmVulLoader(DatasetLoader):
     """
     Class for loading and testing the dataset llm-vul.
 
@@ -193,9 +193,13 @@ class llmvulLoader(DatasetLoader):
                             vjbench_res = cve_test_java_file(project_path, test_cmd)
 
                             if test_cmd.startswith("./gradle"):
-                                result_data = read_test_results_gradle(vul_id, project_path)
+                                result_data = read_test_results_gradle(
+                                    vul_id, project_path
+                                )
                             else:
-                                result_data = read_test_results_maven(vul_id, project_path)
+                                result_data = read_test_results_maven(
+                                    vul_id, project_path
+                                )
 
                         if res == 2 or vjbench_res == 2:
                             answer.other_error = True
@@ -214,5 +218,5 @@ class llmvulLoader(DatasetLoader):
 
                     with open(buggy_file_path, "w") as f:
                         f.writelines(lines)
-        
+
             print_progress_bar(i, len(answers))

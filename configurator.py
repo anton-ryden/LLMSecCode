@@ -1,25 +1,25 @@
 import argparse
 import os
 import json
+import importlib
+import ast
 from typing import List
 from dataset_loader.dataset_loader import DatasetLoader
-from dataset_loader.quixbugs_python_loader import QuixBugsPythonLoader
-from dataset_loader.quixbugs_java_loader import QuixBugsJavaLoader
-from dataset_loader.human_eval_loader import HumanEvalLoader
-from dataset_loader.llmvul_loader import llmvulLoader
+
 from model_loader.model_loader import ModelLoader
 
 
 class Configurator:
     def __init__(self):
         """Initialize the Configurator with default configurations."""
-        # Default configuration values
+        # Set default configuration values
         with open("./config.json", "r") as f:
             testing_configs = json.load(f)["testing_configs"]
 
         for key, value in testing_configs.items():
             setattr(self, key, value)
 
+        self.available_loaders = self.get_available_loaders()
         # Parse command line arguments and check model configurations
         self.parse_args()
         self.check_model_configs()
@@ -74,8 +74,8 @@ class Configurator:
             "--datasets",
             nargs="+",
             default=self.datasets,
-            choices=["quixbugs-python", "quixbugs-java", "defect4j", "human_eval"],
-            help="Choose one or more datasets from 'quixbugs-python', 'quixbugs-java', 'defect4j', and 'human_eval'. Default is 'quixbugs defect4j human_eval'.",
+            choices=self.available_loaders,
+            help="Choose one or more datasets Default is %(default)s",
         )
         parser.add_argument(
             "--results_dir",
@@ -116,29 +116,60 @@ class Configurator:
                     f"If conversation type infilling is used a {parts[1]}.json need to be created."
                 )
 
+    def _get_loader_files(self) -> List[str]:
+        """Get list of loader files from dataset_loader directory."""
+        dataset_loader_path = "dataset_loader"
+        loader_files = os.listdir(dataset_loader_path)
+        loader_files = [
+            file
+            for file in loader_files
+            if file.endswith(".py")
+            and not file.startswith("__")
+            and not file == "dataset_loader.py"
+        ]
+        return loader_files
+
+    def _get_available_loaders_from_file(self, file_content: str) -> List[str]:
+        """Get available loaders from file content."""
+        available_loaders = []
+        tree = ast.parse(file_content)
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                available_loaders.append(node.name.replace("Loader", ""))
+        return available_loaders
+
+    def get_available_loaders(self) -> List[str]:
+        """Get available loaders."""
+        available_loaders = []
+        loader_files = self._get_loader_files()
+        for loader_file in loader_files:
+            try:
+                with open(f"./dataset_loader/{loader_file}") as file:
+                    content = file.read()
+                available_loaders.extend(self._get_available_loaders_from_file(content))
+            except Exception as e:
+                raise Exception(e)
+        return available_loaders
+
     def get_dataset_loaders(self) -> List[DatasetLoader]:
-        """Get dataset loaders based on specified datasets.
-
-        Returns:
-            List[DatasetLoader]: List of dataset loaders.
-        """
+        """Get dataset loaders based on specified datasets."""
         dataset_loaders = []
-
-        for dataset in self.datasets:
-            if dataset == "quixbugs-python":
-                dataset_loaders.append(QuixBugsPythonLoader())
-            elif dataset == "quixbugs-java":
-                dataset_loaders.append(QuixBugsJavaLoader())
-            elif dataset == "human_eval":
-                dataset_loaders.append(HumanEvalLoader())
-            elif dataset == "llm-vul":
-                dataset_loaders.append(llmvulLoader())
-            else:
-                raise ValueError(f"Invalid dataset: {dataset}")
-
-        if not dataset_loaders:
-            raise ValueError("No datasets specified")
-
+        loader_files = self._get_loader_files()
+        for loader_file in loader_files:
+            for dataset in self.datasets:
+                try:
+                    with open(f"./dataset_loader/{loader_file}") as file:
+                        content = file.read()
+                    tree = ast.parse(content)
+                    for node in tree.body:
+                        if isinstance(node, ast.ClassDef):
+                            class_name = f"{dataset}Loader"
+                            if node.name == class_name:
+                                module_name = f"dataset_loader.{loader_file[:-3]}"  # Remove the ".py" extension
+                                module = importlib.import_module(module_name)
+                                dataset_loaders.append(getattr(module, class_name)())
+                except Exception as e:
+                    raise Exception(e)
         return dataset_loaders
 
     def get_model_loaders(self) -> List[ModelLoader]:

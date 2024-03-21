@@ -181,8 +181,8 @@ class QuixBugsJavaLoader(DatasetLoader):
                     file.write(answer.code)
 
                 if answer.code != "":
-                    answer.syntax_error, answer.error_message = super().check_java_syntax(
-                        dynamic_file_path
+                    answer.syntax_error, answer.error_message = (
+                        super().check_java_syntax(dynamic_file_path)
                     )
                 else:
                     answer.other_error = True
@@ -208,5 +208,5 @@ class QuixBugsJavaLoader(DatasetLoader):
 
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
-            
+
             print_progress_bar(i, len(answers))

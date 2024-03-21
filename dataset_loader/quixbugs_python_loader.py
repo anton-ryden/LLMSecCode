@@ -158,5 +158,5 @@ class QuixBugsPythonLoader(DatasetLoader):
                 self.run_tests(program_path, answer)
             else:
                 answer.failed_count, answer.passed_count = 0, 0
-                
+
             print_progress_bar(i, len(answers))
