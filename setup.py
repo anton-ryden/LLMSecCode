@@ -175,6 +175,9 @@ def prepare_quixbugs_python(path: str) -> None:
     Args:
         path (str): Path to the quixbugs repo.
     """
+    if not os.path.exists(path):
+        return
+
     original_path = f"{ROOT_DIR}/{path}/python_programs"
     new_path = f"{ROOT_DIR}/{path}/python_programs_bug"
 
@@ -200,13 +203,6 @@ def prepare_quixbugs_python(path: str) -> None:
             print(f"File {file_name} deleted successfully.")
         except Exception as e:
             raise Exception(f"Error deleting file {file_name}: {e}")
-
-    quixbugs_root = f"{ROOT_DIR}/{path}/.git"
-    try:
-        shutil.rmtree(quixbugs_root)
-        print(".git directory in QuixBugs deleted successfully.")
-    except Exception as e:
-        raise Exception(f"Error deleting .git directory in QuixBugs: {e}")
 
     for file in os.scandir(new_path):
         with open(file, "r") as f:
@@ -256,6 +252,10 @@ def prepare_quixbugs_java(path: str) -> None:
     Args:
         path (str): Path to the quixbugs repo.
     """
+
+    if not os.path.exists(path):
+        return
+
     original_path = f"{ROOT_DIR}/{path}/java_programs"
     new_folder_name = f"{path}/java_programs_bug"
     new_path = f"{ROOT_DIR}/{new_folder_name}"
@@ -303,6 +303,24 @@ def prepare_quixbugs_java(path: str) -> None:
     except Exception as e:
         raise Exception(f"An error occurred: {e}")
 
+
+def prepare_human_eval_infilling(path: str):
+    """Prepare human-eval-infilling repo by changing files and installing.
+
+    Args:
+        path (str): Path to the human-eval-infilling repo.
+    """
+    if not os.path.exists(path):
+        return
+
+    aware = input(
+        "This program exists to execute untrusted model-generated code. Although it is highly unlikely that model-generated code will do something overtly malicious in response to this test suite, model-generated code may act destructively due to a lack of model capability or alignment. Users are strongly encouraged to sandbox this evaluation suite so that it does not perform destructive actions on their host or network. For more information on how OpenAI sandboxes its code, see the their paper. Once you have read this disclaimer, take the appropriate precautions. Are you aware of the risks? And want to install human-eval-infilling?(y/n)"
+    ).lower()
+
+    if aware == "y":
+        os.system(f"cd {ROOT_DIR}/datasets/CG; pip install -e human-eval-infilling")
+
+
 def prepare_vul4j(path: str):
     """Prepare vul4j repo by changing files and installing.
 
@@ -347,6 +365,7 @@ if __name__ == "__main__":
     # Make changes to Dataset Folder
     prepare_quixbugs_python("datasets/APR/QuixBugs")
     prepare_quixbugs_java("datasets/APR/QuixBugs")
+    prepare_human_eval_infilling("datasets/CG/human-eval-infilling")
     prepare_vul4j()
     prepare_llm_vul()
 
