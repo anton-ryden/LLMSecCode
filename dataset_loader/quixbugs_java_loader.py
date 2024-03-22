@@ -9,6 +9,7 @@ from dataset_loader.dataset_loader import DatasetLoader
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
 from utils.framework_utils import print_progress_bar
+from model_loader.model_loader import ModelLoader
 
 
 class QuixBugsJavaLoader(DatasetLoader):
@@ -160,7 +161,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         os.chdir(original_dir)
         return passed_tests, failed_tests, False
 
-    def test_code(self, answers: list[Answer]) -> None:
+    def test_code(self, answers: list[Answer], model: ModelLoader) -> None:
         """
         Tests the provided answer.
 

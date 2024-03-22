@@ -7,6 +7,7 @@ from dataset_loader.dataset_loader import DatasetLoader
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
 from utils.framework_utils import print_progress_bar
+from model_loader.model_loader import ModelLoader
 
 
 class QuixBugsPythonLoader(DatasetLoader):
@@ -120,7 +121,7 @@ class QuixBugsPythonLoader(DatasetLoader):
             answer.error_message = "Timed out"
             subprocess.run(["pkill", "-f", pytest_command])
 
-    def test_code(self, answers: list[Answer]) -> None:
+    def test_code(self, answers: list[Answer], model: ModelLoader) -> None:
         """
         Test the provided answer.
 

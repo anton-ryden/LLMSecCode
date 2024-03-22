@@ -146,7 +146,7 @@ def evaluate_single_model_on_dataset(
 
         generate_answers(answers, depth, dataset_loader, model_loader)
 
-        test_answers(answers, depth, dataset_loader)
+        test_answers(answers, depth, dataset_loader, model_loader)
 
 
 def generate_answers(
@@ -195,7 +195,7 @@ def generate_answers(
     print()
 
 
-def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoader):
+def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoader, model: ModelLoader):
     """
     Test answers for a given set of answers.
 
@@ -213,7 +213,7 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
         print(f"Testing answers Chain-Of-Thougth depth: {depth}")
 
     
-    dataset_loader.test_code(answers)
+    dataset_loader.test_code(answers, model)
     print()
 
 

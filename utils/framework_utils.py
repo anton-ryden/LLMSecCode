@@ -3,7 +3,12 @@ import shutil
 import os
 import json
 import numpy as np
+from pathlib import Path
 from human_eval.evaluation import estimate_pass_at_k
+
+CUR_DIR = os.path.abspath(__file__)[: os.path.abspath(__file__).rindex("/") + 1]
+
+ROOT_PATH = Path(CUR_DIR).parent.absolute()
 
 
 def print_progress_bar(

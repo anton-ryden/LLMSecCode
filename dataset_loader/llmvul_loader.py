@@ -8,6 +8,7 @@ from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
 from utils.llm_vul_utils import *
 from utils.framework_utils import print_progress_bar
+from model_loader.model_loader import ModelLoader
 
 
 class LlmVulLoader(DatasetLoader):
@@ -98,7 +99,7 @@ class LlmVulLoader(DatasetLoader):
         print(f"{self.name} prompts loaded\n")
         self.prompts = prompts
 
-    def test_code(self, answers: list[Answer]) -> None:
+    def test_code(self, answers: list[Answer], model: ModelLoader) -> None:
         """
         Test the provided answer.
 

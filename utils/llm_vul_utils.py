@@ -3,15 +3,10 @@ import subprocess
 import time
 import json
 import re
-from threading import Timer
-from pathlib import Path
 from xml.etree.ElementTree import parse
+from utils.framework_utils import ROOT_PATH
 
 DEBUG = False
-
-CUR_DIR = os.path.abspath(__file__)[: os.path.abspath(__file__).rindex("/") + 1]
-
-ROOT_PATH = Path(CUR_DIR).parent.absolute()
 
 LLM_VUL_DIR = os.path.join(ROOT_PATH, "datasets/APR/llm_vul")
 

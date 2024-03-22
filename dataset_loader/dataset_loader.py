@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 from data_structures.answer import Answer
+from model_loader.model_loader import ModelLoader
 
 
 class DatasetLoader(ABC):
@@ -37,7 +38,7 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def test_code(self, answers: list[Answer]) -> None:
+    def test_code(self, answers: list[Answer], model: ModelLoader) -> None:
         """
         Abstract method to test code answers.
 
