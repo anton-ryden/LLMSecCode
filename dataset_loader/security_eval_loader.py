@@ -78,13 +78,16 @@ class SecurityEvalLoader(DatasetLoader):
             os.makedirs(model_dir)
 
         # Write all answers to a file
-        for answer in answers:
+        for i, answer in enumerate(answers):
             cwe_id = answer.id.split("_")[0]
             source_id = answer.id.split("_")[1]
             serial_id = answer.id.split("_")[2].split(".")[0]
 
             cwe_path = os.path.join(model_dir, cwe_id)
-            file_path = os.path.join(cwe_path, source_id + "_" + serial_id + ".py")
+            if answers[i].id == answers[i-1].id and i > 0:
+                file_path = os.path.join(cwe_path, source_id + "_" + serial_id + f"_{i}" + ".py")
+            else:
+                file_path = os.path.join(cwe_path, source_id + "_" + serial_id + ".py")
             if not os.path.exists(cwe_path):
                 os.makedirs(cwe_path)
             
@@ -125,11 +128,14 @@ class SecurityEvalLoader(DatasetLoader):
         with open(f"{results_dir}/testcases_{model.name}.json", "r") as file:
             bandit_data = json.load(file)
 
-        for answer in answers:
+        for i, answer in enumerate(answers):
             cwe_id = answer.id.split("_")[0]
             source_id = answer.id.split("_")[1]
             serial_id = answer.id.split("_")[2].split(".")[0]
-            file_name = source_id + "_" + serial_id + ".py"
+            if answers[i].id == answers[i-1].id and i > 0:
+                file_name = source_id + "_" + serial_id + f"_{i}" + ".py"
+            else:
+                file_name = source_id + "_" + serial_id + ".py"
             cwe_path = os.path.join(model_dir, cwe_id)
             file_cwe = cwe_path.split('/')[-1]
             file_path = os.path.join(cwe_path, file_name)
