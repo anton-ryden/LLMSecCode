@@ -5,12 +5,19 @@ from pathlib import Path
 import re
 import csv
 import fileinput
+import json
 
-from utils.llm_vul_utils import LLM_VUL_DIR, VJBENCH_DIR, VUL4J_DIR, SCRIPTS_DIR, vul4j_bug_id_list
+from utils.llm_vul_utils import (
+    LLM_VUL_DIR,
+    VJBENCH_DIR,
+    VUL4J_DIR,
+    SCRIPTS_DIR,
+    VUL4J_INSTALLATION,
+    vul4j_bug_id_list,
+)
 
 ROOT_DIR = Path(__file__).resolve().parent
-FNULL = open(os.devnull, 'w')
-VUL4J_INSTALLATION = "/home/ekan/vul4j"
+FNULL = open(os.devnull, "w")
 
 
 def install_dependencies() -> None:
@@ -32,32 +39,24 @@ def clone_repository(repo_url: str, dir_name: str) -> None:
     """
     destination_path = ROOT_DIR / dir_name
 
-    if destination_path.exists():
-        overwrite = input(
-            f"Destination directory {destination_path} already exists. Do you want to overwrite? (y/n): "
-        ).lower()
-        if overwrite != "y":
-            print("Skipping cloning.")
-            return
-        else:
-            print(f"Overwriting existing directory at {destination_path}...")
-            try:
-                shutil.rmtree(destination_path)
-            except Exception as e:
-                raise Exception(f"Error removing existing directory: {e}")
+def prepare_llm_vul(path: str) -> None:
+    """Prepare llm_vul directory by fetching all vulnerabilities studied in the project.
 
-    print(f"Cloning repository from {repo_url} to {destination_path}...")
-    subprocess.run(["git", "clone", repo_url, str(destination_path)], check=True)
+    Args:
+        path (str): Path to the quixbugs repo.
+    """
 
-def prepare_llm_vul() -> None:
-    """Prepare llm_vul directory by fetching all vulnerabilities studied in the project"""
-    
+    if not os.path.exists(path):
+        return
+
     studied_vuls = []
     util_path = os.path.join(SCRIPTS_DIR, "util.py")
     csv_file = os.path.join(LLM_VUL_DIR, "VJBench_dataset.csv")
-    succ_vul_file = os.path.join(VUL4J_INSTALLATION, "reproduction", "successful_vulns.txt")
+    succ_vul_file = os.path.join(
+        VUL4J_INSTALLATION, "reproduction", "successful_vulns.txt"
+    )
 
-    with open(succ_vul_file, 'r') as file:
+    with open(succ_vul_file, "r") as file:
         succ_vuls = file.read().splitlines()
 
     with fileinput.FileInput(util_path, inplace=True) as file:
@@ -67,47 +66,65 @@ def prepare_llm_vul() -> None:
             elif i == 21:
                 print(f'VJBENCH_DIR = "{VJBENCH_DIR}"')
             else:
-                print(line, end='')
+                print(line, end="")
 
     if os.path.exists(LLM_VUL_DIR):
-        os.makedirs(VJBENCH_DIR)
-        os.makedirs(VUL4J_DIR)
+        if not os.path.exists(VJBENCH_DIR):
+            os.makedirs(VJBENCH_DIR)
+        if not os.path.exists(VUL4J_DIR):
+            os.makedirs(VUL4J_DIR)
 
     # Cleaup
-    shutil.rmtree(LLM_VUL_DIR + "/jasper")
-    shutil.rmtree(LLM_VUL_DIR + "/Model_patches")
-    shutil.rmtree(SCRIPTS_DIR + "/APR")
-    shutil.rmtree(SCRIPTS_DIR + "/CodeGen")
-    shutil.rmtree(SCRIPTS_DIR + "/CodeT5")
-    shutil.rmtree(SCRIPTS_DIR + "/Codex")
-    shutil.rmtree(SCRIPTS_DIR + "/fine-tuned_CodeGen")
-    shutil.rmtree(SCRIPTS_DIR + "/fine-tuned_InCoder")
-    shutil.rmtree(SCRIPTS_DIR + "/fine-tuned_PLBART")
-    shutil.rmtree(SCRIPTS_DIR + "/InCoder")
-    shutil.rmtree(SCRIPTS_DIR + "/PLBART")
+    paths = [
+        f"{LLM_VUL_DIR}/jasper",
+        f"{LLM_VUL_DIR}/Model_patches",
+        f"{SCRIPTS_DIR}/APR",
+        f"{SCRIPTS_DIR}/CodeGen",
+        f"{SCRIPTS_DIR}/CodeT5",
+        f"{SCRIPTS_DIR}/Codex",
+        f"{SCRIPTS_DIR}/fine-tuned_CodeGen",
+        f"{SCRIPTS_DIR}/fine-tuned_CodeT5",
+        f"{SCRIPTS_DIR}/fine-tuned_InCoder",
+        f"{SCRIPTS_DIR}/fine-tuned_PLBART",
+        f"{SCRIPTS_DIR}/InCoder",
+        f"{SCRIPTS_DIR}/PLBART",
+    ]
+
+    for path in paths:
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
     vul_dir = os.path.join(LLM_VUL_DIR, "VJBench-trans")
     entries = os.listdir(vul_dir)
-    java_dir_list = [entry for entry in entries if os.path.isdir(os.path.join(vul_dir, entry))]
+    java_dir_list = [
+        entry for entry in entries if os.path.isdir(os.path.join(vul_dir, entry))
+    ]
 
     for dir in java_dir_list:
         if dir.startswith("VUL") and dir not in succ_vuls:
             dir = os.path.join(vul_dir, dir)
             shutil.rmtree(dir)
-    
-    with open(csv_file, 'r') as file:
+
+    with open(csv_file, "r") as file:
         csv_reader = csv.DictReader(file)
 
         for row in csv_reader:
-            study_value = row['Used in the study']
+            study_value = row["Used in the study"]
 
-            if study_value == 'Yes':
-                studied_vuls.append(row['Vulnerability IDs'])
+            if study_value == "Yes":
+                studied_vuls.append(row["Vulnerability IDs"])
 
     print("Downloading VJBench vulnerabilities...")
     for vul in studied_vuls:
-        cmd = ["python3", os.path.join(SCRIPTS_DIR, "build_vjbench.py"), "checkout", vul]
-        proccess = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        cmd = [
+            "python3",
+            os.path.join(SCRIPTS_DIR, "build_vjbench.py"),
+            "checkout",
+            vul,
+        ]
+        proccess = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
         outp = proccess.stdout
 
         print(f"Downloading vulnerability: {vul}...")
@@ -117,7 +134,7 @@ def prepare_llm_vul() -> None:
         if f"VUL4J-{i}" in succ_vuls:
             print(f"Downloading vulnerability: VUL4J-{i}...")
             cmd = f"vul4j checkout --id VUL4J-{i} -d {VUL4J_DIR}/VUL4J-{i}"
-            cmd =cmd.split()
+            cmd = cmd.split()
             p3 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             out3, err = p3.communicate()
 
@@ -256,22 +273,51 @@ def prepare_quixbugs_java(path: str) -> None:
     except Exception as e:
         raise Exception(f"An error occurred: {e}")
 
+def prepare_vul4j(path: str):
+    """Prepare vul4j repo by changing files and installing.
+
+    Args:
+        path (str): Path to the vul4j repo.
+    """
+    if not os.path.exists(path):
+        return
+
+    with open(f"{ROOT_DIR}/config.json", "r") as file:
+        tokens = json.load(file)
+
+    vul4j_root = tokens["paths"]["VUL4J_ROOT"]
+
+    with open(f"{ROOT_DIR}/utils/vul4j_config.py", "r") as file:
+        vul4j_config = file.read()
+
+    vul4j_config = vul4j_config.replace("{VUL4J_ROOT}", tokens["paths"]["VUL4J_ROOT"])
+    vul4j_config = vul4j_config.replace("{JAVA7_PATH}", tokens["paths"]["JAVA7_PATH"])
+    vul4j_config = vul4j_config.replace("{JAVA8_PATH}", tokens["paths"]["JAVA8_PATH"])
+
+    with open(f"{vul4j_root}vul4j/config.py", "w") as file:
+        file.write(vul4j_config)
+
+    tokens["paths"]["VUL4J_ROOT"]
+    os.system("cd ./datasets/APR/vul4j; python3 setup.py install")
+
 
 if __name__ == "__main__":
     # Dataset Repository URL
     quixbugs_url = "https://github.com/jkoppel/QuixBugs"
-    llmvul_url = "https://github.com/lin-tan/llm-vul.git"
     human_infilling = "https://github.com/openai/human-eval-infilling"
-    
+    vul4j = "https://github.com/tuhh-softsec/vul4j"
+    llmvul_url = "https://github.com/lin-tan/llm-vul"
+
     # Clone Datasets
     clone_repository(quixbugs_url, "datasets/APR/QuixBugs")
     clone_repository(human_infilling, "datasets/CG/human-eval-infilling")
-    os.system(f"cd {ROOT_DIR}/datasets/CG; pip install -e human-eval-infilling")
+    clone_repository(vul4j, "datasets/APR/vul4j")
     clone_repository(llmvul_url, "datasets/APR/llm_vul")
 
     # Make changes to Dataset Folder
     prepare_quixbugs_python("datasets/APR/QuixBugs")
     prepare_quixbugs_java("datasets/APR/QuixBugs")
+    prepare_vul4j()
     prepare_llm_vul()
 
     print("Setup completed successfully.")
