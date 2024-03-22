@@ -39,6 +39,36 @@ def clone_repository(repo_url: str, dir_name: str) -> None:
     """
     destination_path = ROOT_DIR / dir_name
 
+    overwrite = input(
+        f"Destination directory {destination_path} already exists. Do you want to overwrite? (y/n): "
+    ).lower()
+    if overwrite == "y":
+        if destination_path.exists():
+            overwrite = input(
+                f"Destination directory {destination_path} already exists. Do you want to overwrite? (y/n): "
+            ).lower()
+            if overwrite != "y":
+                print("Skipping cloning.")
+                return
+            else:
+                print(f"Overwriting existing directory at {destination_path}...")
+                try:
+                    shutil.rmtree(destination_path)
+                except Exception as e:
+                    raise Exception(f"Error removing existing directory: {e}")
+        else:
+            print(f"Cloning repository from {repo_url} to {destination_path}...")
+            subprocess.run(
+                ["git", "clone", repo_url, str(destination_path)], check=True
+            )
+    else:
+        print(f"Skipping downloading: {dir_name}")
+
+    if os.path.exists(f"{destination_path}/git"):
+        shutil.rmtree(f"{destination_path}/git")
+        print(f"Deleted git directory: {destination_path}/git")
+
+
 def prepare_llm_vul(path: str) -> None:
     """Prepare llm_vul directory by fetching all vulnerabilities studied in the project.
 
