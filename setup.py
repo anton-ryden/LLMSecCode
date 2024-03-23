@@ -184,7 +184,7 @@ def prepare_quixbugs_python(path: str) -> None:
     new_path = f"{ROOT_DIR}/{path}/python_programs_bug"
 
     print(f"Copying and renaming directory from {original_path} to {new_path}...")
-    shutil.copytree(original_path, new_path)
+    shutil.copytree(original_path, new_path, dirs_exist_ok=True)
     files_to_exclude = [
         "node.py",
         "breadth_first_search_test.py",
@@ -316,10 +316,19 @@ def prepare_human_eval_infilling(path: str):
         return
 
     aware = input(
-        "This program exists to execute untrusted model-generated code. Although it is highly unlikely that model-generated code will do something overtly malicious in response to this test suite, model-generated code may act destructively due to a lack of model capability or alignment. Users are strongly encouraged to sandbox this evaluation suite so that it does not perform destructive actions on their host or network. For more information on how OpenAI sandboxes its code, see the their paper. Once you have read this disclaimer, take the appropriate precautions. Are you aware of the risks? And want to install human-eval-infilling?(y/n)"
+        "This program exists to execute untrusted model-generated code. Although it is highly unlikely that model-generated code will do something overtly malicious in response to this test suite, model-generated code may act destructively due to a lack of model capability or alignment. Users are strongly encouraged to sandbox this evaluation suite so that it does not perform destructive actions on their host or network. For more information on how OpenAI sandboxes its code, see the their paper. Once you have read this disclaimer, take the appropriate precautions. Are you aware of the risks? And want to install human-eval-infilling?(yes/no)"
     ).lower()
 
-    if aware == "y":
+    if aware == "yes":
+        with open(f"{path}/human_eval_infilling/execution.py", "r") as file:
+            content = file.readlines()
+
+        for i, line in enumerate(content):
+            if line == "#                     exec(check_program, exec_globals)\n":
+                content[i] = "                    exec(check_program, exec_globals)\n"
+
+        with open(f"{path}/human_eval_infilling/execution.py", "w") as file:
+            file.write("".join(content))
         os.system(f"cd {ROOT_DIR}/datasets/CG; pip install -e human-eval-infilling")
 
 
@@ -347,7 +356,12 @@ def prepare_vul4j(path: str):
     with open(f"{vul4j_root}vul4j/config.py", "w") as file:
         file.write(vul4j_config)
 
-    tokens["paths"]["VUL4J_ROOT"]
+    with open(f"{ROOT_DIR}/utils/vul4j_main.py", "r") as file:
+        vul4j_main = file.read()
+
+    with open(f"{vul4j_root}vul4j/main.py", "w") as file:
+        file.write(vul4j_main)
+
     os.system("cd ./datasets/APR/vul4j; python3 setup.py install")
 
 
@@ -368,7 +382,7 @@ if __name__ == "__main__":
     prepare_quixbugs_python("datasets/APR/QuixBugs")
     prepare_quixbugs_java("datasets/APR/QuixBugs")
     prepare_human_eval_infilling("datasets/CG/human-eval-infilling")
-    prepare_vul4j()
+    prepare_vul4j("datasets/APR/vul4j")
     prepare_llm_vul("datasets/APR/llm_vul")
 
     print("Setup completed successfully.")
