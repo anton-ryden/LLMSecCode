@@ -23,13 +23,9 @@ VUL4J_DIR = os.path.join(
     LLM_VUL_DIR, "Vul4J_projects"
 )  # the folder contains all the Vul4J projects
 
-VUL4J_INSTALLATION = os.path.join(ROOT_PATH, "datasets/APR/vul4j")
-
 VJBENCH_DIR = os.path.join(
     LLM_VUL_DIR, "VJBench_projects"
 )  # the folder contains all the VJBench projects
-
-JAVA8_DIR = "/usr/lib/jvm/jdk1.8.0_391"  # The location of your java 8
 
 
 vul4j_bug_id_list = [
@@ -107,6 +103,9 @@ cve_int_to_name = {
     10012: "Flow-2",
     1003: "Netty-2",
 }
+
+with open(f"{ROOT_PATH}/config.json", "r") as file:
+    JAVA8_DIR = json.load(file)["paths"]["JAVA8_PATH"]
 
 
 def vul4j_compile_java_file(working_directory, cmd):
