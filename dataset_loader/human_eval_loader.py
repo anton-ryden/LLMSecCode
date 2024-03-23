@@ -1,11 +1,29 @@
 import os
 
-
-from human_eval.execution import check_correctness
-from human_eval.data import read_problems, HUMAN_EVAL
+from human_eval_infilling.execution import (
+    check_correctness as check_correctness_infilling,
+)
+from human_eval_infilling.data import (
+    read_problems as read_problems_infilling,
+)
+from human_eval.execution import check_correctness as check_correctness_instruct
+from human_eval.data import (
+    read_problems as read_problems_instruct,
+    HUMAN_EVAL as HUMAN_EVAL_INSTRUCT,
+)
+from human_eval_infilling.execution import (
+    check_correctness as check_correctness_infilling,
+)
+from human_eval_infilling.data import (
+    read_problems as read_problems_infilling,
+)
+from human_eval.execution import check_correctness as check_correctness_instruct
+from human_eval.data import (
+    read_problems as read_problems_instruct,
+    HUMAN_EVAL as HUMAN_EVAL_INSTRUCT,
+)
 from collections import defaultdict
 from dataset_loader.dataset_loader import DatasetLoader
-from data_structures.task import Task
 from data_structures.answer import Answer
 from data_structures.prompt_store import PromptsStore
 from utils.framework_utils import print_progress_bar
@@ -41,12 +59,16 @@ class HumanEvalLoader(DatasetLoader):
         print(f"Loading {self.name} prompts...")
         prompts = PromptsStore(self.area)
 
-        # Fetch all problems from HumanEval
-        problems = read_problems(HUMAN_EVAL)
-        data = [problems]
-
-        for task_id, entry in data[0].items():
+        # Fetch all problems from HumanEval normal aka instruct
+        instruct_problems = [read_problems_instruct(HUMAN_EVAL_INSTRUCT)]
+        for task_id, entry in instruct_problems[0].items():
             prompts.add_instruct(task_id, entry["prompt"], "python")
+
+        # Fetch all problems from HumanEval infilling
+        infilling_problems = [read_problems_infilling("single-line")]
+
+        for task_id, entry in infilling_problems[0].items():
+            prompts.add_infilling(task_id, entry["prompt"], entry["suffix"])
 
         print(f"{self.name} prompts loaded.\n")
         self.prompts = prompts
@@ -58,11 +80,16 @@ class HumanEvalLoader(DatasetLoader):
         Args:
             answer (Answer): Answer object.
         """
-        print_progress_bar(0, len(answers))
         for i, answer in enumerate(answers, start=1):
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+            code = ""
+            if answer.id.split("/")[0] == "SingleLineInfilling":
+                code = answer.completion
+            else:
+                code = answer.code
             run_eval_list = defaultdict(list)
-            run_eval_list = run_eval(answer.id, answer.code, run_eval_list)
+            run_eval_list = run_eval(answer.id, code, run_eval_list)
 
             if run_eval_list[answer.id][0][1]["passed"]:
                 answer.passed = 1
@@ -99,19 +126,15 @@ def run_eval(task_id, answer, results):
     Evaluates the given answer against problems from HUMAN_EVAL, checks correctness with a timeout,
     and updates the results dictionary accordingly.
     """
-    problem_file = HUMAN_EVAL
     timeout = 3.0
-    problems = read_problems(problem_file)
 
-    # Check generated samples against test suites.
-    futures = []
+    if task_id.split("/")[0] == "SingleLineInfilling":
+        problem = read_problems_infilling("single-line")[task_id]
+        correctness_result = check_correctness_infilling(problem, answer, timeout)
+    else:
+        problem = read_problems_instruct(HUMAN_EVAL_INSTRUCT)[task_id]
+        correctness_result = check_correctness_instruct(problem, answer, timeout)
 
-    task_id = task_id
-    completion = answer
-    future = check_correctness(problems[task_id], completion, timeout)
-    futures.append(future)
-
-    correctness_result = future
     results[correctness_result["task_id"]].append(
         (correctness_result["completion_id"], correctness_result)
     )
