@@ -12,7 +12,6 @@ from utils.llm_vul_utils import (
     VJBENCH_DIR,
     VUL4J_DIR,
     SCRIPTS_DIR,
-    VUL4J_INSTALLATION,
     vul4j_bug_id_list,
 )
 
@@ -76,15 +75,17 @@ def prepare_llm_vul(path: str) -> None:
     Args:
         path (str): Path to the quixbugs repo.
     """
-
     if not os.path.exists(path):
         return
+
+    with open(f"{ROOT_DIR}/config.json", "r") as file:
+        tokens = json.load(file)
 
     studied_vuls = []
     util_path = os.path.join(SCRIPTS_DIR, "util.py")
     csv_file = os.path.join(LLM_VUL_DIR, "VJBench_dataset.csv")
     succ_vul_file = os.path.join(
-        VUL4J_INSTALLATION, "reproduction", "successful_vulns.txt"
+        tokens["paths"]["VUL4J_ROOT"], "reproduction", "successful_vulns.txt"
     )
 
     with open(succ_vul_file, "r") as file:
@@ -368,6 +369,6 @@ if __name__ == "__main__":
     prepare_quixbugs_java("datasets/APR/QuixBugs")
     prepare_human_eval_infilling("datasets/CG/human-eval-infilling")
     prepare_vul4j()
-    prepare_llm_vul()
+    prepare_llm_vul("datasets/APR/llm_vul")
 
     print("Setup completed successfully.")
