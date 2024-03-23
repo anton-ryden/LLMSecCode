@@ -109,7 +109,7 @@ class Configurator:
             files = os.listdir(f"./chat_templates")
             if parts[1] not in files:
                 raise ValueError(f"Template not found: chat_templates/{parts[1]}")
-            elif parts[2] not in ["instruction", "infilling"]:
+            elif parts[2] not in ["instruction", "infilling", "completion"]:
                 raise ValueError(f"The converation type '{parts[2]}' is not supported.")
             elif f"{parts[1]}.json" not in files and parts[2] == "infilling":
                 raise ValueError(

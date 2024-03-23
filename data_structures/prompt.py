@@ -68,8 +68,6 @@ class Prompt:
         Returns:
             Prompt: Prompt object.
         """
-        with open("./prompts/system_completion") as system_file:
-            system_role = {"role": "system", "content": system_file.read()}
         user_role = {"role": "user", "content": code}
         # return cls([system_role, user_role])
         return cls([user_role])

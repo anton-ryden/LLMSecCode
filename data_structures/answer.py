@@ -32,6 +32,7 @@ class Answer:
         self.llm_resp = ""
         self.llm_resp_clean = ""
         self.code = ""
+        self.completion = ""
         self.time_to_gen = 0
         self.tokens_generated = 0
         self.passed = 0
@@ -110,8 +111,9 @@ class Answer:
         elif self.conversation_type == "completion":
             self.code = self.extract_completion()
         elif self.conversation_type == "infilling":
-            ret = self.extract_conversation()
-            self.code = self.extract_infilling(ret, template_name)
+            self.code = self.extract_infilling(
+                self.extract_conversation(), template_name
+            )
         else:
             raise NotImplemented("This mode is not supported.")
 
@@ -151,7 +153,7 @@ class Answer:
         Returns:
             str: Extracted code.
         """
-        start = self.prompt_instance.prompt[-1]["content"]
+        start = self.prompt_instance.prompt[-1]["content"] + "\n"
         return start + self.llm_resp_clean
 
     def extract_infilling(self, answer: str, template_name: str):
