@@ -15,6 +15,7 @@ from model_loader.model_loader import ModelLoader
 with open(os.path.join(ROOT_PATH, "config.json"), "r") as f:
     CODEQL_PATH = json.load(f)["paths"]["CODEQL_PATH"]
 
+
 class SecurityEvalLoader(DatasetLoader):
     """
     Class for loading and testing the dataset SecurityEval.
@@ -63,13 +64,14 @@ class SecurityEvalLoader(DatasetLoader):
         """
         seceval_dir = os.path.join(ROOT_PATH, "datasets", "CG", "security_eval")
         model_dir = os.path.join(seceval_dir, "Testcases" + "_" + model.name)
-        db_dir = os.path.join(seceval_dir, "Databases", "Testcases" + "_" + model.name + "_" + "DB")
+        db_dir = os.path.join(
+            seceval_dir, "Databases", "Testcases" + "_" + model.name + "_" + "DB"
+        )
         results_dir = os.path.join(seceval_dir, "results")
 
-        codeql_ver_dir = os.path.join(CODEQL_PATH, "qlpacks", "codeql", "python-queries")
-        codeql_ver = os.listdir(codeql_ver_dir)[0]
-
-        codeql_cwe_directory = os.path.join(codeql_ver_dir, codeql_ver, "Security")
+        codeql_cwe_directory = os.path.join(
+            CODEQL_PATH, "qlpacks", "codeql", "python-queries", "0.9.11", "Security"
+        )
         codeql_cwe = os.listdir(codeql_cwe_directory)
 
         if not os.path.exists(seceval_dir):
@@ -87,13 +89,15 @@ class SecurityEvalLoader(DatasetLoader):
             serial_id = answer.id.split("_")[2].split(".")[0]
 
             cwe_path = os.path.join(model_dir, cwe_id)
-            if answers[i].id == answers[i-1].id and i > 0:
-                file_path = os.path.join(cwe_path, source_id + "_" + serial_id + f"_{i}" + ".py")
+            if answers[i].id == answers[i - 1].id and i > 0:
+                file_path = os.path.join(
+                    cwe_path, source_id + "_" + serial_id + f"_{i}" + ".py"
+                )
             else:
                 file_path = os.path.join(cwe_path, source_id + "_" + serial_id + ".py")
             if not os.path.exists(cwe_path):
                 os.makedirs(cwe_path)
-            
+
             with open(file_path, "w") as file:
                 file.write(answer.code)
 
@@ -121,7 +125,9 @@ class SecurityEvalLoader(DatasetLoader):
         for i, cwe in enumerate(codeql_cwe, start=1):
             cwe_res_path = os.path.join(codeql_res_path, f"results_{cwe}.csv")
             cmd = f"export PATH={CODEQL_PATH}:$PATH && cd {seceval_dir}/Databases && codeql database analyze '{db_dir}' {codeql_cwe_directory}/{cwe} --format=csv --output='{cwe_res_path}'"
-            res = subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            res = subprocess.run(
+                cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
             print_progress_bar(i, len(codeql_cwe))
         print("\n Done!")
 
@@ -135,12 +141,12 @@ class SecurityEvalLoader(DatasetLoader):
             cwe_id = answer.id.split("_")[0]
             source_id = answer.id.split("_")[1]
             serial_id = answer.id.split("_")[2].split(".")[0]
-            if answers[i].id == answers[i-1].id and i > 0:
+            if answers[i].id == answers[i - 1].id and i > 0:
                 file_name = source_id + "_" + serial_id + f"_{i}" + ".py"
             else:
                 file_name = source_id + "_" + serial_id + ".py"
             cwe_path = os.path.join(model_dir, cwe_id)
-            file_cwe = cwe_path.split('/')[-1]
+            file_cwe = cwe_path.split("/")[-1]
             file_path = os.path.join(cwe_path, file_name)
 
             for result in bandit_data["results"]:
@@ -154,22 +160,26 @@ class SecurityEvalLoader(DatasetLoader):
                         if cwe not in answer.error_message:
                             answer.error_message += ", " + cwe
                             answer.failed += 1
-                    
+
             for cwe in codeql_cwe:
                 if not cwe == "CWE-020-ExternalAPIs":
-                    cwe_res_path = os.path.join(results_dir, f"testcases_{model.name}", f"results_{cwe}.csv")
+                    cwe_res_path = os.path.join(
+                        results_dir, f"testcases_{model.name}", f"results_{cwe}.csv"
+                    )
                     with open(cwe_res_path, "r") as file:
                         cwe_res = csv.reader(file)
                         for row in cwe_res:
                             if len(row) >= 5:
                                 filename_with_path = row[4]
-                                if filename_with_path == "/" + file_cwe + "/" + file_name:
+                                if (
+                                    filename_with_path
+                                    == "/" + file_cwe + "/" + file_name
+                                ):
                                     if cwe not in answer.error_message:
                                         answer.error_message += ", " + cwe
                                         answer.failed += 1
-            
+
             if answer.failed == 0:
                 answer.passed = 1
             answer.error_message = answer.error_message.strip(",").strip()
         print("\n Done!")
-

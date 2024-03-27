@@ -1,8 +1,9 @@
 {
     "paths": {
-        "VUL4J_ROOT": "/home/antovis/Documents/ModelEvalKit/datasets/APR/vul4j/",
+        "VUL4J_ROOT": "",
         "JAVA7_PATH": "/usr/lib/jvm/jdk1.7.0_80",
-        "JAVA8_PATH": "/usr/lib/jvm/jdk1.8.0_391"
+        "JAVA8_PATH": "/usr/lib/jvm/jdk1.8.0_391",
+        "CODEQL_PATH": ""
     },
     "testing_configs" : {
         "model_configs": [
