@@ -66,7 +66,10 @@ class SecurityEvalLoader(DatasetLoader):
         db_dir = os.path.join(seceval_dir, "Databases", "Testcases" + "_" + model.name + "_" + "DB")
         results_dir = os.path.join(seceval_dir, "results")
 
-        codeql_cwe_directory = os.path.join(CODEQL_PATH, "qlpacks", "codeql", "python-queries", "0.9.10", "Security")
+        codeql_ver_dir = os.path.join(CODEQL_PATH, "qlpacks", "codeql", "python-queries")
+        codeql_ver = os.listdir(codeql_ver_dir)[0]
+
+        codeql_cwe_directory = os.path.join(codeql_ver_dir, codeql_ver, "Security")
         codeql_cwe = os.listdir(codeql_cwe_directory)
 
         if not os.path.exists(seceval_dir):
@@ -169,6 +172,4 @@ class SecurityEvalLoader(DatasetLoader):
                 answer.passed = 1
             answer.error_message = answer.error_message.strip(",").strip()
         print("\n Done!")
-
-
 
