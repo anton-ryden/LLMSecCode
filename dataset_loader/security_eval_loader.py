@@ -16,6 +16,7 @@ with open(os.path.join(ROOT_PATH, "config.json"), "r") as f:
     CODEQL_PATH = json.load(f)["paths"]["CODEQL_PATH"]
 
 
+
 class SecurityEvalLoader(DatasetLoader):
     """
     Class for loading and testing the dataset SecurityEval.
@@ -67,6 +68,9 @@ class SecurityEvalLoader(DatasetLoader):
         db_dir = os.path.join(
             seceval_dir, "Databases", "Testcases" + "_" + model.name + "_" + "DB"
         )
+        db_dir = os.path.join(
+            seceval_dir, "Databases", "Testcases" + "_" + model.name + "_" + "DB"
+        )
         results_dir = os.path.join(seceval_dir, "results")
 
         codeql_cwe_directory = os.path.join(
@@ -93,10 +97,15 @@ class SecurityEvalLoader(DatasetLoader):
                 file_path = os.path.join(
                     cwe_path, source_id + "_" + serial_id + f"_{i}" + ".py"
                 )
+            if answers[i].id == answers[i - 1].id and i > 0:
+                file_path = os.path.join(
+                    cwe_path, source_id + "_" + serial_id + f"_{i}" + ".py"
+                )
             else:
                 file_path = os.path.join(cwe_path, source_id + "_" + serial_id + ".py")
             if not os.path.exists(cwe_path):
                 os.makedirs(cwe_path)
+
 
             with open(file_path, "w") as file:
                 file.write(answer.code)
@@ -128,6 +137,9 @@ class SecurityEvalLoader(DatasetLoader):
             res = subprocess.run(
                 cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
+            res = subprocess.run(
+                cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
             print_progress_bar(i, len(codeql_cwe))
         print("\n Done!")
 
@@ -142,10 +154,12 @@ class SecurityEvalLoader(DatasetLoader):
             source_id = answer.id.split("_")[1]
             serial_id = answer.id.split("_")[2].split(".")[0]
             if answers[i].id == answers[i - 1].id and i > 0:
+            if answers[i].id == answers[i - 1].id and i > 0:
                 file_name = source_id + "_" + serial_id + f"_{i}" + ".py"
             else:
                 file_name = source_id + "_" + serial_id + ".py"
             cwe_path = os.path.join(model_dir, cwe_id)
+            file_cwe = cwe_path.split("/")[-1]
             file_cwe = cwe_path.split("/")[-1]
             file_path = os.path.join(cwe_path, file_name)
 
@@ -161,8 +175,12 @@ class SecurityEvalLoader(DatasetLoader):
                             answer.error_message += ", " + cwe
                             answer.failed += 1
 
+
             for cwe in codeql_cwe:
                 if not cwe == "CWE-020-ExternalAPIs":
+                    cwe_res_path = os.path.join(
+                        results_dir, f"testcases_{model.name}", f"results_{cwe}.csv"
+                    )
                     cwe_res_path = os.path.join(
                         results_dir, f"testcases_{model.name}", f"results_{cwe}.csv"
                     )
@@ -175,9 +193,14 @@ class SecurityEvalLoader(DatasetLoader):
                                     filename_with_path
                                     == "/" + file_cwe + "/" + file_name
                                 ):
+                                if (
+                                    filename_with_path
+                                    == "/" + file_cwe + "/" + file_name
+                                ):
                                     if cwe not in answer.error_message:
                                         answer.error_message += ", " + cwe
                                         answer.failed += 1
+
 
             if answer.failed == 0:
                 answer.passed = 1
