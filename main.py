@@ -87,7 +87,10 @@ def evaluate_single_model_on_datasets(
         )
 
         evaluate_single_model_on_dataset(
-            model_loader, dataset_loader, dataset_store, configurator.max_chain_depth
+            model_loader,
+            dataset_loader,
+            dataset_store,
+            configurator.max_chain_depth,
         )
 
         dataset_store.update_stats()
@@ -142,7 +145,7 @@ def evaluate_single_model_on_dataset(
                 answers.extend(task.answers[0])
         else:
             answers = get_incorrect_answers(dataset_store.tasks, depth)
-            model_loader.max_length = (depth + 1) * model_loader.max_length
+            model_loader.max_length = (depth + 1) * model_loader.init_max_length
 
         generate_answers(answers, depth, dataset_loader, model_loader)
 
@@ -195,7 +198,9 @@ def generate_answers(
     print()
 
 
-def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoader, model: ModelLoader):
+def test_answers(
+    answers: List[Answer], depth: int, dataset_loader: DatasetLoader, model: ModelLoader
+):
     """
     Test answers for a given set of answers.
 
@@ -212,7 +217,6 @@ def test_answers(answers: List[Answer], depth: int, dataset_loader: DatasetLoade
     else:
         print(f"Testing answers Chain-Of-Thougth depth: {depth}")
 
-    
     dataset_loader.test_code(answers, model)
     print()
 

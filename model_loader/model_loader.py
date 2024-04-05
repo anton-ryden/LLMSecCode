@@ -6,7 +6,6 @@ from transformers import (
 from transformers.generation import GenerationConfig
 from typing import List, Tuple
 import torch
-import logging
 import time
 import json
 import psutil
@@ -38,6 +37,7 @@ class ModelLoader:
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
+        self.init_max_length = conf.max_length_per_depth
         self.max_length = conf.max_length_per_depth
         self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
@@ -214,8 +214,10 @@ class ModelLoader:
                     )  # GB
 
         except Exception as e:
-            logging.info(e)
+            print("ERROR: " + str(e))
 
         response = self.tokenizer.decode(batch_completions[0])
+
+        print(response)
 
         return response, tot_time, memory_usage
