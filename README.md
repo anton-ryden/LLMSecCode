@@ -113,7 +113,7 @@ python main.py -h
 | ***TheBloke/deepseek-llm-7B-chat-GPTQ***      | ***deepseek_llm***|
 | ***TheBloke/deepseek-llm-67B-chat-GPTQ***     | ***deepseek_llm***|
 
-### Examples of models that support code insertion
+### Examples of models that support code infilling
 | Model name                                    | Prompt template   |
 | --------------------------------------------- | ------------------|
 | TheBloke/CodeLlama-7B-GPTQ                    | llama             |
@@ -122,9 +122,6 @@ python main.py -h
 | TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama             |
 | TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama             |
 | TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama             |
-| TheBloke/CodeLlama-7B-Python-GPTQ             | llama             |
-| TheBloke/CodeLlama-13B-Python-GPTQ            | llama             |
-| TheBloke/CodeLlama-34B-Python-GPTQ            | llama             |
 | TheBloke/deepseek-coder-1.3B-base-GPTQ        | deepseek_coder    |
 | TheBloke/deepseek-coder-6.7B-base-GPTQ        | deepseek_coder    |
 | TheBloke/deepseek-coder-33B-base-GPTQ         | deepseek_coder    |
