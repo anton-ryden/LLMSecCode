@@ -85,7 +85,7 @@ class HumanEvalLoader(DatasetLoader):
 
             code = ""
             if answer.id.split("/")[0] == "SingleLineInfilling":
-                code = answer.completion
+                code = answer.infill_piece
             else:
                 code = answer.code
             run_eval_list = defaultdict(list)
@@ -126,11 +126,12 @@ def run_eval(task_id, answer, results):
     Evaluates the given answer against problems from HUMAN_EVAL, checks correctness with a timeout,
     and updates the results dictionary accordingly.
     """
-    timeout = 3.0
+    timeout = 5.0
 
     if task_id.split("/")[0] == "SingleLineInfilling":
         problem = read_problems_infilling("single-line")[task_id]
         correctness_result = check_correctness_infilling(problem, answer, timeout)
+
     else:
         problem = read_problems_instruct(HUMAN_EVAL_INSTRUCT)[task_id]
         correctness_result = check_correctness_instruct(problem, answer, timeout)

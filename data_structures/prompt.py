@@ -85,6 +85,6 @@ class Prompt:
             Prompt: Prompt object.
         """
         prompt = Prompt({})
-        prompt.prefix = prefix
+        prompt.prefix = prefix.rstrip("\n")
         prompt.suffix = suffix
         return prompt

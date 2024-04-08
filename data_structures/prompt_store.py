@@ -134,5 +134,5 @@ def create_infilling_prompt(prompt: Prompt, template_name: str):
         "role": "user",
         "content": message,
     }
-    prompt.prompt = [system_role, user_role]
+    prompt.prompt = [user_role]
     return prompt

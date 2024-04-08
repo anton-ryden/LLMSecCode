@@ -32,7 +32,7 @@ class Answer:
         self.llm_resp = ""
         self.llm_resp_clean = ""
         self.code = ""
-        self.completion = ""
+        self.infill_piece = ""
         self.time_to_gen = 0
         self.tokens_generated = 0
         self.passed = 0
@@ -112,8 +112,12 @@ class Answer:
             self.code = self.extract_completion()
         elif self.conversation_type == "infilling":
             self.code = self.extract_infilling(
-                self.extract_conversation(), template_name
+                self.extract_conversation(),
+                template_name,
             )
+            infilling_piece = self.code.replace(self.prompt_instance.prefix, "")
+            infilling_piece = infilling_piece.replace(self.prompt_instance.suffix, "")
+            self.infill_piece = infilling_piece
         else:
             raise NotImplemented("This mode is not supported.")
 
@@ -177,6 +181,7 @@ class Answer:
 
         prefix = self.prompt_instance.prefix
         suffix = self.prompt_instance.suffix
+
         return tokens["answer_template"].format(
             prefix=prefix, suffix=suffix, answer=answer
         )
