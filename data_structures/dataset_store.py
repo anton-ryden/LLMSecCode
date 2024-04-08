@@ -120,7 +120,7 @@ class DatasetStore:
                 "Amount of answers": self.num_answers[depth],
                 "Success Rate": (
                     round((self.correct[depth] / self.num_answers[depth]) * 100, 1)
-                    if depth > 0
+                    if depth > 0 and self.num_answers[depth] != 0
                     else None
                 ),
                 "Pass@1": round(self.pass_at_1 * 100, 1) if depth == 0 else None,
