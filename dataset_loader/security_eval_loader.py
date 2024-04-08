@@ -16,7 +16,6 @@ with open(os.path.join(ROOT_PATH, "config.json"), "r") as f:
     CODEQL_PATH = json.load(f)["paths"]["CODEQL_PATH"]
 
 
-
 class SecurityEvalLoader(DatasetLoader):
     """
     Class for loading and testing the dataset SecurityEval.
@@ -106,7 +105,6 @@ class SecurityEvalLoader(DatasetLoader):
             if not os.path.exists(cwe_path):
                 os.makedirs(cwe_path)
 
-
             with open(file_path, "w") as file:
                 file.write(answer.code)
 
@@ -154,7 +152,6 @@ class SecurityEvalLoader(DatasetLoader):
             source_id = answer.id.split("_")[1]
             serial_id = answer.id.split("_")[2].split(".")[0]
             if answers[i].id == answers[i - 1].id and i > 0:
-            if answers[i].id == answers[i - 1].id and i > 0:
                 file_name = source_id + "_" + serial_id + f"_{i}" + ".py"
             else:
                 file_name = source_id + "_" + serial_id + ".py"
@@ -175,7 +172,6 @@ class SecurityEvalLoader(DatasetLoader):
                             answer.error_message += ", " + cwe
                             answer.failed += 1
 
-
             for cwe in codeql_cwe:
                 if not cwe == "CWE-020-ExternalAPIs":
                     cwe_res_path = os.path.join(
@@ -193,14 +189,9 @@ class SecurityEvalLoader(DatasetLoader):
                                     filename_with_path
                                     == "/" + file_cwe + "/" + file_name
                                 ):
-                                if (
-                                    filename_with_path
-                                    == "/" + file_cwe + "/" + file_name
-                                ):
                                     if cwe not in answer.error_message:
                                         answer.error_message += ", " + cwe
                                         answer.failed += 1
-
 
             if answer.failed == 0:
                 answer.passed = 1
