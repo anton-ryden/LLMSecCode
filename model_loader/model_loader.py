@@ -37,8 +37,8 @@ class ModelLoader:
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
-        self.init_max_length = conf.max_length_per_depth
-        self.max_length = conf.max_length_per_depth
+        self.init_max_length = conf.max_new_tokens
+        self.max_new_tokens = conf.max_new_tokens
         self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
         self.device = conf.device
@@ -192,7 +192,7 @@ class ModelLoader:
                     input,
                     use_cache=True,
                     generation_config=gen_cfg,
-                    max_length=self.max_length,
+                    max_new_tokens=self.max_new_tokens,
                     temperature=self.temperature,
                     top_p=self.top_p,
                     do_sample=True,

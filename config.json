@@ -15,7 +15,7 @@
         "model_dir": "./models",
         "answers_per_task": 1,
         "max_chain_depth": 1,
-        "max_length_per_depth": 2000,
+        "max_new_tokens": 300,
         "temperature": 0.8,
         "top_p": 0.95,
         "datasets": ["LlmVul"],

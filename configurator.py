@@ -47,10 +47,10 @@ class Configurator:
             help="The number of answers to generate per task.\n Default is %(default)s.",
         )
         parser.add_argument(
-            "--max_length_per_depth",
+            "--max_new_tokens",
             type=int,
-            default=self.max_length_per_depth,
-            help="The maximum lengt of the response from the model per depth.\n Default is %(default)s.",
+            default=self.max_new_tokens,
+            help="The maximum new tokens of the response from the model.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--temperature",
@@ -132,10 +132,14 @@ class Configurator:
     def _get_available_loaders_from_file(self, file_content: str) -> List[str]:
         """Get available loaders from file content."""
         available_loaders = []
-        tree = ast.parse(file_content)
-        for node in tree.body:
-            if isinstance(node, ast.ClassDef):
-                available_loaders.append(node.name.replace("Loader", ""))
+        try:
+            tree = ast.parse(file_content)
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    available_loaders.append(node.name.replace("Loader", ""))
+        except Exception as e:
+            print(e)
+
         return available_loaders
 
     def get_available_loaders(self) -> List[str]:
