@@ -37,7 +37,6 @@ class ModelLoader:
 
         self.cache_dir = conf.model_dir
         self.temperature = conf.temperature
-        self.init_max_length = conf.max_new_tokens
         self.max_new_tokens = conf.max_new_tokens
         self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
@@ -218,7 +217,5 @@ class ModelLoader:
             print("ERROR: " + str(e))
 
         response = self.tokenizer.decode(batch_completions[0])
-
-        print(response)
 
         return response, tot_time, memory_usage

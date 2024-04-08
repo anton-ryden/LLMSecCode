@@ -1,1 +1,2 @@
-Create a {language} function to address the subsequent problem. Only include the code within a code block, no testcases:
+Write a {language} function to address the following problem, return the code in a codeblock:
+{code}

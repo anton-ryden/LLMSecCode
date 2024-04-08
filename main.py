@@ -145,7 +145,6 @@ def evaluate_single_model_on_dataset(
                 answers.extend(task.answers[0])
         else:
             answers = get_incorrect_answers(dataset_store.tasks, depth)
-            model_loader.max_length = (depth + 1) * model_loader.init_max_length
 
         generate_answers(answers, depth, dataset_loader, model_loader)
 

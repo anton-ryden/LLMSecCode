@@ -158,7 +158,7 @@ class DatasetStore:
             "Statistics": statistics,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max length": conf.max_new_tokens,
+                "Max new tokens": conf.max_new_tokens,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
                 "Conversation type": conversation_type,
@@ -207,7 +207,7 @@ class DatasetStore:
             "Avg Pass@1": pass_at_1,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max length": conf.max_new_tokens,
+                "Max new tokens": conf.max_new_tokens,
                 "Temperature": conf.temperature,
                 "Top p": conf.top_p,
                 "Conversation type": conversation_type,
