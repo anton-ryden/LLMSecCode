@@ -134,5 +134,9 @@ def create_infilling_prompt(prompt: Prompt, template_name: str):
         "role": "user",
         "content": message,
     }
-    prompt.prompt = [user_role]
+
+    if tokens["use_system_message"]:
+        prompt.prompt = [system_role, user_role]
+    else:
+        prompt.prompt = [user_role]
     return prompt
