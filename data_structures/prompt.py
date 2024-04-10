@@ -69,7 +69,6 @@ class Prompt:
             Prompt: Prompt object.
         """
         user_role = {"role": "user", "content": code}
-        # return cls([system_role, user_role])
         return cls([user_role])
 
     @classmethod

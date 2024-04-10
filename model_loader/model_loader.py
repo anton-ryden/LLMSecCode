@@ -149,7 +149,7 @@ class ModelLoader:
         no_inst = self.remove_special_tokens(no_inst)
         no_inst = no_inst.replace("\t", "    ")
         no_inst = no_inst.replace("\\n", "\n")
-        no_inst = no_inst.strip()
+        no_inst = no_inst.rstrip(" ")
         return no_inst
 
     def get_tokens_generated(self, clean_resp: str) -> int:
