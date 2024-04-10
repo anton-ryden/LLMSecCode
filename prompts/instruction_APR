@@ -1,4 +1,2 @@
-Rewrite the following so that you remove any bug or vulnerability in the code, do not provide any other text or test cases. Return the code in a codeblock:
-```{language}
+Rewrite the following {language} code so that you remove any bug or vulnerability, return the code in a codeblock:
 {code}
-```
