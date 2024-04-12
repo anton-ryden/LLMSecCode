@@ -60,7 +60,7 @@ class Configurator:
         )
         parser.add_argument(
             "--top_p",
-            type=int,
+            type=float,
             default=self.top_p,
             help="Top p, also known as nucleus sampling, is another hyperparameter that controls the randomness of language model output. It sets a threshold probability and selects the top tokens whose cumulative probability exceeds the threshold.\n Default is %(default)s.",
         )
