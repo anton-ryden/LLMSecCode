@@ -105,6 +105,9 @@ class LlmVulLoader(DatasetLoader):
 
         Args:
             answer (Answer): Answer object.
+            model  (ModelLoader): Model that created the answer.
+        Returns:
+            None
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         print_progress_bar(0, len(answers))

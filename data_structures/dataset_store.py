@@ -27,6 +27,7 @@ class DatasetStore:
         self.max_memory = 0
         self.tasks = tasks
         self.area = area
+        self.stat = {depth: None for depth in range(max_chain_depth)}
         self.syntax_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.other_errors = {depth: 0 for depth in range(max_chain_depth)}
         self.gen_time = {depth: 0 for depth in range(max_chain_depth)}
@@ -38,6 +39,9 @@ class DatasetStore:
         self.pass_at_1 = np.array([])
         self.pass_at_k = np.array([])
 
+    def add_stat(self, depth: int, stat: dict):
+        self.stat[depth] = stat
+
     def update_stats(self):
         """
         Updates statistics for each task in the dataset.
@@ -45,7 +49,6 @@ class DatasetStore:
         total_answers, correct_answers = [], []
         for task in self.tasks:
             task.update_stats()
-
             for depth in range(task.max_chain_depth):
                 self.syntax_errors[depth] += task.syntax_errors[depth]
                 self.other_errors[depth] += task.other_errors[depth]
@@ -95,7 +98,11 @@ class DatasetStore:
         }
 
     def to_summary_json(
-        self, conf: Configurator, conversation_type: str, run_time: float
+        self,
+        conf: Configurator,
+        conversation_type: str,
+        model_name: str,
+        run_time: float,
     ):
         """
         Convert the dataset store to a brief summary JSON format.
@@ -103,6 +110,7 @@ class DatasetStore:
         Args:
             conf: Configuration object.
             conversation_type (str): Type of conversation (conversation, completion, infilling).
+            model_name (str): The name of the model.
             run_time (float): The time it takes to run both the tests and generation.
 
         Returns:
@@ -120,13 +128,10 @@ class DatasetStore:
                 "Amount of answers": self.num_answers[depth],
                 "Success Rate": (
                     round((self.correct[depth] / self.num_answers[depth]) * 100, 1)
-                    if depth > 0 and self.num_answers[depth] != 0
-                    else None
                 ),
-                "Pass@1": round(self.pass_at_1 * 100, 1) if depth == 0 else None,
-                f"Pass@{conf.answers_per_task}": (
-                    round(self.pass_at_k * 100, 1) if depth == 0 else None
-                ),
+                f"Pass@{conf.answers_per_task}": (round(self.pass_at_k * 100, 1)),
+                "Pass@1": round(self.pass_at_1 * 100, 1),
+                "Stat": self.stat[depth],
             }
             for depth in range(self.max_chain_depth)
             if any(
@@ -141,6 +146,7 @@ class DatasetStore:
                     self.num_answers[depth],
                     self.pass_at_1,
                     self.pass_at_k,
+                    self.stat[depth],
                 ]
             )
         }
@@ -152,6 +158,7 @@ class DatasetStore:
 
         return {
             "Name": self.name,
+            "Model name": model_name,
             "Area": self.area,
             "Total time": round(run_time, 1),
             "Maximum memory usage (GB)": round(self.max_memory, 2),
@@ -166,7 +173,11 @@ class DatasetStore:
         }
 
     def to_brief_summary_json(
-        self, conf: Configurator, conversation_type: str, run_time: float
+        self,
+        conf: Configurator,
+        conversation_type: str,
+        model_name: str,
+        run_time: float,
     ):
         """
         Convert the dataset store to a brief summary JSON format.
@@ -174,6 +185,7 @@ class DatasetStore:
         Args:
             conf: Configuration object.
             conversation_type (str): Type of conversation (conversation, completion, infilling).
+            model_name (str): The name of the model.
             run_time (float): The time it takes to run both the tests and generation.
 
         Returns:
@@ -189,8 +201,17 @@ class DatasetStore:
         amount_of_answers = sum(self.num_answers.values())
         pass_at_1 = round(self.pass_at_1 * 100, 1)
 
-        return {
+        total_stat = self.stat[0]
+        for i in range(1, len(self.stat)):
+            if self.stat[i] == None:
+                continue
+            for key in self.stat[i]:
+                if key in self.stat[i]:
+                    total_stat[key] = total_stat[key] * self.stat[i][key]
+
+        return_dict = {
             "Name": self.name,
+            "Model name": model_name,
             "Area": self.area,
             "Maximum memory usage (GB)": round(self.max_memory, 2),
             "Syntax errors": total_syntax_errors,
@@ -204,7 +225,9 @@ class DatasetStore:
             "Failed": total_failed,
             "Correct": total_correct,
             "Amount of answers": amount_of_answers,
-            "Avg Pass@1": pass_at_1,
+            "Pass@1": pass_at_1,
+            f"Pass@{conf.answers_per_task}": (round(self.pass_at_k * 100, 1)),
+            "Total stat": total_stat,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
                 "Max new tokens": conf.max_new_tokens,
@@ -213,3 +236,5 @@ class DatasetStore:
                 "Conversation type": conversation_type,
             },
         }
+        return_dict = {k: v for k, v in return_dict.items() if v is not None}
+        return return_dict

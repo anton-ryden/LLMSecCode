@@ -61,6 +61,9 @@ class SecurityEvalLoader(DatasetLoader):
 
         Args:
             answers (Answer): Answer object.
+            model  (ModelLoader): Model that created the answer.
+        Returns:
+            Return dict of stats of cwe
         """
         seceval_dir = os.path.join(ROOT_PATH, "datasets", "CG", "security_eval")
         model_dir = os.path.join(seceval_dir, "Testcases" + "_" + model.name)
@@ -147,6 +150,8 @@ class SecurityEvalLoader(DatasetLoader):
         with open(f"{results_dir}/testcases_{model.name}.json", "r") as file:
             bandit_data = json.load(file)
 
+        amount_of_cwe = 0
+
         for i, answer in enumerate(answers):
             cwe_id = answer.id.split("_")[0]
             source_id = answer.id.split("_")[1]
@@ -170,7 +175,8 @@ class SecurityEvalLoader(DatasetLoader):
                             cwe = "CWE-" + f"{cwe_nr}"
                         if cwe not in answer.error_message:
                             answer.error_message += ", " + cwe
-                            answer.failed += 1
+                            answer.failed = 1
+                            amount_of_cwe += 1
 
             for cwe in codeql_cwe:
                 if not cwe == "CWE-020-ExternalAPIs":
@@ -191,9 +197,17 @@ class SecurityEvalLoader(DatasetLoader):
                                 ):
                                     if cwe not in answer.error_message:
                                         answer.error_message += ", " + cwe
-                                        answer.failed += 1
+                                        answer.failed = 1
+                                        amount_of_cwe += 1
 
             if answer.failed == 0:
                 answer.passed = 1
             answer.error_message = answer.error_message.strip(",").strip()
         print("\n Done!")
+
+        atleast_one = [answer.failed for answer in answers]
+
+        return {
+            "Amount of cwe": amount_of_cwe,
+            "Amount of respones with atleast one cwe": sum(atleast_one),
+        }

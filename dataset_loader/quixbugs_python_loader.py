@@ -38,7 +38,7 @@ class QuixBugsPythonLoader(DatasetLoader):
         python_file_list = os.listdir(python_directory)
 
         for i, file_name in enumerate(python_file_list):
-            if i == 10:
+            if i == 1000:
                 break
             try:
                 file_path = os.path.join(python_directory, file_name)
@@ -127,6 +127,7 @@ class QuixBugsPythonLoader(DatasetLoader):
 
         Args:
             answer (Answer): Answer object.
+            model  (ModelLoader): Model that created the answer.
         Returns:
             None
         """

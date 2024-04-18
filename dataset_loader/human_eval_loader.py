@@ -61,13 +61,17 @@ class HumanEvalLoader(DatasetLoader):
 
         # Fetch all problems from HumanEval normal aka instruct
         instruct_problems = [read_problems_instruct(HUMAN_EVAL_INSTRUCT)]
-        for task_id, entry in instruct_problems[0].items():
+        for i, (task_id, entry) in enumerate(instruct_problems[0].items()):
+            if i == 1000:
+                break
             prompts.add_instruct(task_id, entry["prompt"], "python")
 
         # Fetch all problems from HumanEval infilling
         infilling_problems = [read_problems_infilling("single-line")]
 
-        for task_id, entry in infilling_problems[0].items():
+        for i, (task_id, entry) in enumerate(infilling_problems[0].items()):
+            if i == 1000:
+                break
             prompts.add_infilling(task_id, entry["prompt"], entry["suffix"])
 
         print(f"{self.name} prompts loaded.\n")
@@ -79,6 +83,9 @@ class HumanEvalLoader(DatasetLoader):
 
         Args:
             answer (Answer): Answer object.
+            model  (ModelLoader): Model that created the answer.
+        Return:
+            None
         """
         for i, answer in enumerate(answers, start=1):
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -106,6 +113,7 @@ class HumanEvalLoader(DatasetLoader):
                     answer.other_error = True
                 else:
                     answer.syntax_error = True
+
                 answer.error_message = result
 
             print_progress_bar(i, len(answers))
