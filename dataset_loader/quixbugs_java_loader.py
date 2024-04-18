@@ -37,7 +37,7 @@ class QuixBugsJavaLoader(DatasetLoader):
         java_file_list = os.listdir(java_directory)
 
         for i, file_name in enumerate(java_file_list):
-            if i == 10:
+            if i == 1000:
                 break
             try:
                 file_path_full = os.path.join(java_directory, file_name)
@@ -89,7 +89,7 @@ class QuixBugsJavaLoader(DatasetLoader):
             Tuple[int, int, bool]: A tuple containing the number of passed tests, the number of failed tests and if a syntax error occured.
         """
         original_dir = os.getcwd()
-        quixbugs_dir = "./QuixBugs/"
+        quixbugs_dir = "./datasets/APR/QuixBugs/"
         failed_tests = 0
         passed_tests = 0
 
@@ -132,17 +132,13 @@ class QuixBugsJavaLoader(DatasetLoader):
 
                 elif match2:
                     # If the second pattern is found, open the corresponding JSON file
-                    json_file_path = (
-                        f"./QuixBugs/json_testcases/{class_name.lower()}.json"
-                    )
+                    json_file_path = f"./datasets/APR/QuixBugs/json_testcases/{class_name.lower()}.json"
                     if os.path.exists(json_file_path):
                         with open(json_file_path, "r") as json_file:
                             # Read the number of lines in the JSON file thats not empty
                             passed_tests = sum(1 for line in json_file if line.strip())
                     else:
-                        test_file_path = (
-                            f"./QuixBugs/java_testcases/junit/{class_name}_TEST.java"
-                        )
+                        test_file_path = f"./datasets/APR/QuixBugs/java_testcases/junit/{class_name}_TEST.java"
                         with open(test_file_path, "r") as file:
                             java_code = file.read()
 
@@ -167,6 +163,7 @@ class QuixBugsJavaLoader(DatasetLoader):
 
         Args:
             answer (Answer): Answer object.
+            model  (ModelLoader): Model that created the answer.
         """
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         dynamic_directory = "./datasets/APR/QuixBugs/java_programs"

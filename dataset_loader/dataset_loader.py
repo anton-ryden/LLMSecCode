@@ -44,6 +44,7 @@ class DatasetLoader(ABC):
 
         Args:
             answer (Answer): The answer to test.
+            model  (ModelLoader): Model that created the answer.
         """
         pass
 
@@ -146,12 +147,11 @@ class DatasetLoader(ABC):
 
         except subprocess.CalledProcessError as e:
             syntax_error = True
-            error_message += f"JavaSyntaxError:\n"
+            error_message = "JavaSyntaxError:\n"
 
             # Check if stderr is not None before decoding
             if e.stderr is not None:
-                # error_message += e.stderr
-                error_message += ""
+                error_message += e.stderr
             else:
                 error_message += "No stderr output available."
         return syntax_error, error_message
