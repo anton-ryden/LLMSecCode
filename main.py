@@ -105,13 +105,17 @@ def evaluate_single_model_on_datasets(
             dataset_store.to_brief_summary_json(
                 configurator,
                 model_loader.conversation_type,
+                model_loader.name,
                 run_time,
             ),
             f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_brief_summary.json",
         )
         save_json(
             dataset_store.to_summary_json(
-                configurator, model_loader.conversation_type, run_time
+                configurator,
+                model_loader.conversation_type,
+                model_loader.name,
+                run_time,
             ),
             f"./results/{configurator.results_dir}/{model_loader.name}/{dataset_store.name}/{model_loader.conversation_type}_summary.json",
         )
@@ -148,7 +152,9 @@ def evaluate_single_model_on_dataset(
 
         generate_answers(answers, depth, dataset_loader, model_loader)
 
-        test_answers(answers, depth, dataset_loader, model_loader)
+        stat = test_answers(answers, depth, dataset_loader, model_loader)
+
+        dataset_store.add_stat(depth, stat)
 
 
 def generate_answers(
@@ -216,8 +222,7 @@ def test_answers(
     else:
         print(f"Testing answers Chain-Of-Thougth depth: {depth}")
 
-    dataset_loader.test_code(answers, model)
-    print()
+    return dataset_loader.test_code(answers, model)
 
 
 def get_incorrect_answers(tasks: list[Task], depth: int) -> List[Answer]:
