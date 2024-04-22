@@ -129,8 +129,9 @@ class DatasetStore:
                 "Success Rate": (
                     round((self.correct[depth] / self.num_answers[depth]) * 100, 1)
                 ),
-                f"Pass@{conf.answers_per_task}": (round(self.pass_at_k * 100, 1)),
+                **({f"Pass@{conf.answers_per_task}": (round(self.pass_at_k * 100, 1)),
                 "Pass@1": round(self.pass_at_1 * 100, 1),
+                } if depth == 0 else {}),
                 "Stat": self.stat[depth],
             }
             for depth in range(self.max_chain_depth)
@@ -144,8 +145,8 @@ class DatasetStore:
                     self.failed[depth],
                     self.correct[depth],
                     self.num_answers[depth],
-                    self.pass_at_1,
-                    self.pass_at_k,
+                    self.pass_at_1 is not None,
+                    self.pass_at_k is not None,
                     self.stat[depth],
                 ]
             )
