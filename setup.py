@@ -78,7 +78,7 @@ def prepare_llm_vul(path: str) -> None:
     if not os.path.exists(path):
         return
 
-    with open(f"{ROOT_DIR}/config.json", "r") as file:
+    with open(f"{ROOT_DIR}/config/config.json", "r") as file:
         tokens = json.load(file)
 
     studied_vuls = []
@@ -341,7 +341,7 @@ def prepare_vul4j(path: str):
     if not os.path.exists(path):
         return
 
-    with open(f"{ROOT_DIR}/config.json", "r") as file:
+    with open(f"{ROOT_DIR}/config/config.json", "r") as file:
         tokens = json.load(file)
 
     vul4j_root = tokens["paths"]["VUL4J_ROOT"]
@@ -364,6 +364,30 @@ def prepare_vul4j(path: str):
 
     os.system("cd ./datasets/APR/vul4j; python3 setup.py install")
 
+def prepare_cyberseceval(path: str):
+    """Prepare PurpleLlama repo by changing files and installing.
+
+    Args:
+        path (str): Path to the PurpleLlama repo.
+    """
+    if not os.path.exists(path):
+        return
+    
+    source_file = os.path.join(ROOT_DIR, "utils", "cyberseceval_llm_py_changes.py")
+    dest_file = os.path.join(ROOT_DIR, path, "CybersecurityBenchmarks", "benchmark", "llm.py")
+
+    try:
+        with open(source_file, 'r') as source:
+            data = source.read()
+        
+        with open(dest_file, 'w') as dest:
+            dest.write(data)
+        
+        print("llm.py successfully updated.")
+    
+    except FileNotFoundError:
+        print("One of the files doesn't exist.")
+
 
 if __name__ == "__main__":
     # Dataset Repository URL
@@ -371,12 +395,16 @@ if __name__ == "__main__":
     human_infilling = "https://github.com/openai/human-eval-infilling"
     vul4j = "https://github.com/tuhh-softsec/vul4j"
     llmvul_url = "https://github.com/lin-tan/llm-vul"
+    purple_llama = "https://github.com/meta-llama/PurpleLlama.git"
 
     # Clone Datasets
     clone_repository(quixbugs_url, "datasets/APR/QuixBugs")
     clone_repository(human_infilling, "datasets/CG/human-eval-infilling")
     clone_repository(vul4j, "datasets/APR/vul4j")
     clone_repository(llmvul_url, "datasets/APR/llm_vul")
+    
+    # Clone Purple Llama
+    clone_repository(purple_llama, "datasets/suites/PurpleLlama")
 
     # Make changes to Dataset Folder
     prepare_quixbugs_python("datasets/APR/QuixBugs")
@@ -384,5 +412,6 @@ if __name__ == "__main__":
     prepare_human_eval_infilling("datasets/CG/human-eval-infilling")
     prepare_vul4j("datasets/APR/vul4j")
     prepare_llm_vul("datasets/APR/llm_vul")
+    prepare_cyberseceval("datasets/suites/PurpleLlama")
 
     print("Setup completed successfully.")

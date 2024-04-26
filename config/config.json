@@ -18,7 +18,8 @@
         "max_new_tokens": 300,
         "temperature": 0.8,
         "top_p": 0.95,
-        "datasets": ["LlmVul"],
+        "datasets": ["HumanEval"],
+        "run_cyberseceval": false,
         "results_dir": "default",
         "device": "cuda",
         "remote_code": true

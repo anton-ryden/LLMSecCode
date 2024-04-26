@@ -7,13 +7,15 @@ from typing import List
 from dataset_loader.dataset_loader import DatasetLoader
 
 from model_loader.model_loader import ModelLoader
+from utils.framework_utils import ROOT_PATH
 
 
 class Configurator:
     def __init__(self):
         """Initialize the Configurator with default configurations."""
         # Set default configuration values
-        with open("./config.json", "r") as f:
+        config_file = os.path.join(ROOT_PATH, "config", "config.json")
+        with open(config_file, "r") as f:
             testing_configs = json.load(f)["testing_configs"]
 
         for key, value in testing_configs.items():
@@ -78,6 +80,12 @@ class Configurator:
             help="Choose one or more datasets Default is %(default)s",
         )
         parser.add_argument(
+            "--run_cyberseceval",
+            type=bool,
+            default=self.run_cyberseceval,
+            help="Choose if you want to run CyberSecEval Default is %(default)s",
+        )
+        parser.add_argument(
             "--results_dir",
             type=str,
             default=self.results_dir,
@@ -106,7 +114,7 @@ class Configurator:
         """Check if specified template sets exist."""
         for model_config in self.model_configs:
             parts = model_config.split(":")
-            files = os.listdir(f"./chat_templates")
+            files = os.listdir(f"{ROOT_PATH}/chat_templates")
             if parts[1] not in files:
                 raise ValueError(f"Template not found: chat_templates/{parts[1]}")
             elif parts[2] not in ["instruction", "infilling", "completion"]:
@@ -118,7 +126,7 @@ class Configurator:
 
     def _get_loader_files(self) -> List[str]:
         """Get list of loader files from dataset_loader directory."""
-        dataset_loader_path = "dataset_loader"
+        dataset_loader_path = os.path.join(ROOT_PATH, "dataset_loader")
         loader_files = os.listdir(dataset_loader_path)
         loader_files = [
             file
@@ -148,7 +156,7 @@ class Configurator:
         loader_files = self._get_loader_files()
         for loader_file in loader_files:
             try:
-                with open(f"./dataset_loader/{loader_file}") as file:
+                with open(f"{ROOT_PATH}/dataset_loader/{loader_file}") as file:
                     content = file.read()
                 available_loaders.extend(self._get_available_loaders_from_file(content))
             except Exception as e:
@@ -162,7 +170,7 @@ class Configurator:
         for loader_file in loader_files:
             for dataset in self.datasets:
                 try:
-                    with open(f"./dataset_loader/{loader_file}") as file:
+                    with open(f"{ROOT_PATH}/dataset_loader/{loader_file}") as file:
                         content = file.read()
                     tree = ast.parse(content)
                     for node in tree.body:
