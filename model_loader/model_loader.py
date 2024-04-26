@@ -44,7 +44,7 @@ class ModelLoader:
         self.batch_size = 1
         self.chat_template = ""
         self.remote_code = conf.remote_code
-
+        self.terminators = []
         self.name = model_id.split("/")[1]
 
     def load_model_tokenizer(self):
@@ -67,10 +67,14 @@ class ModelLoader:
             cache_dir=self.cache_dir,
             chat_template=self.set_chat_template(self.template_name),
         )
+
+        self.model, self.tokenizer = model, tokenizer
+
+        self.set_terminators()
+
         print(
             f"Done loading {self.name} model for {self.conversation_type} conversation!"
         )
-        self.model, self.tokenizer = model, tokenizer
 
     def unload_model_tokenizer(self):
         """
@@ -95,6 +99,17 @@ class ModelLoader:
                 content += line.rstrip().lstrip()
         return content
 
+    def set_terminators(self):
+        with open(f"./chat_templates/{self.template_name}.json") as file:
+            tokens = json.load(file)
+
+        self.terminators.append(self.tokenizer.eos_token_id)
+        if "terminators" in tokens:
+            for terminator in tokens["terminators"]:
+                self.terminators.append(
+                    self.tokenizer.convert_tokens_to_ids(terminator)
+                )
+
     def remove_special_tokens(self, no_inst: str) -> str:
         """
         Remove special tokens from the provided string.
@@ -104,7 +119,7 @@ class ModelLoader:
         Returns:
             str: The string without special tokens.
         """
-        with open("./chat_templates/llama.json") as file:
+        with open(f"./chat_templates/{self.template_name}.json") as file:
             tokens = json.load(file)
 
         for token in tokens["tokens_to_remove"]:
@@ -196,7 +211,7 @@ class ModelLoader:
                     top_p=self.top_p,
                     do_sample=True,
                     repetition_penalty=1.1,
-                    eos_token_id=self.tokenizer.eos_token_id,
+                    eos_token_id=self.terminators,
                     pad_token_id=self.tokenizer.eos_token_id,
                 )
                 tot_time += time.time() - start
