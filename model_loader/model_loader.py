@@ -53,22 +53,20 @@ class ModelLoader:
         """
         print(f"Loading {self.name} model for {self.conversation_type} conversation...")
         # Load model and tokenizer on GPU
-        model = AutoModelForCausalLM.from_pretrained(
+        self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
             device_map=self.device,
             trust_remote_code=self.remote_code,
             cache_dir=self.cache_dir,
         ).eval()
 
-        tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_id,
             use_fast=True,
             device_map=self.device,
             cache_dir=self.cache_dir,
             chat_template=self.set_chat_template(self.template_name),
         )
-
-        self.model, self.tokenizer = model, tokenizer
 
         self.set_terminators()
 
@@ -165,6 +163,9 @@ class ModelLoader:
         no_inst = no_inst.replace("\t", "    ")
         no_inst = no_inst.replace("\\n", "\n")
         no_inst = no_inst.rstrip(" ")
+
+        if not no_inst:
+            no_inst = "No response"
         return no_inst
 
     def get_tokens_generated(self, clean_resp: str) -> int:
