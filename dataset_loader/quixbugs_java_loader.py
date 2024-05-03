@@ -179,8 +179,8 @@ class QuixBugsJavaLoader(DatasetLoader):
                     file.write(answer.code)
 
                 if answer.code != "":
-                    answer.syntax_error, answer.error_message = (
-                        super().check_java_syntax(dynamic_file_path)
+                    answer.syntax_error, answer.error_message = check_java_syntax(
+                        dynamic_file_path
                     )
                 else:
                     answer.other_error = True
@@ -208,3 +208,60 @@ class QuixBugsJavaLoader(DatasetLoader):
                 print(f"An unexpected error occurred: {e}")
 
             print_progress_bar(i, len(answers))
+
+
+def check_java_syntax(file_path: str) -> Tuple[bool, str]:
+    """
+    Check Java syntax errors in code.
+
+    Args:
+        file_path (str): The location of the java code.
+    Returns:
+        Tuple[bool, str]: Tuple indicating whether a syntax error occurred (bool) and the corresponding error message (str).
+    """
+    error_message = ""
+    syntax_error = False
+    file_name = [
+        "SHORTEST_PATH_LENGTH.java",
+        "SHORTEST_PATHS.java",
+        "BREADTH_FIRST_SEARCH.java",
+        "TOPOLOGICAL_ORDERING.java",
+        "DETECT_CYCLE.java",
+        "MINIMUM_SPANNING_TREE.java",
+        "REVERSE_LINKED_LIST.java",
+        "DEPTH_FIRST_SEARCH.java",
+    ]
+
+    try:
+        if file_path is not None:
+            if os.path.basename(file_path) in file_name:
+                command = [
+                    "javac",
+                    file_path,
+                    "./datasets/APR/QuixBugs/java_programs/Node.java",
+                    "./datasets/APR/QuixBugs/java_programs/WeightedEdge.java",
+                ]
+                # Use subprocess to invoke the Java compiler directly on the file
+                result = subprocess.run(
+                    command, check=True, stderr=subprocess.PIPE, text=True
+                )
+            else:
+                result = subprocess.run(
+                    ["javac", file_path],
+                    check=True,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+        else:
+            syntax_error = True
+
+    except subprocess.CalledProcessError as e:
+        syntax_error = True
+        error_message = "JavaSyntaxError:\n"
+
+        # Check if stderr is not None before decoding
+        if e.stderr is not None:
+            error_message += e.stderr
+        else:
+            error_message += "No stderr output available."
+    return syntax_error, error_message
