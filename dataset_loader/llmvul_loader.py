@@ -187,6 +187,8 @@ class LlmVulLoader(DatasetLoader):
                                 if res == 2:
                                     answer.other_error = True
                                     answer.error_message = "test_timeout"
+                                    answer.failed = 1
+                                    continue
                                 testlog_file = os.path.join(
                                     VUL4J_DIR, vul_id, "VUL4J", "testing_results.json"
                                 )
@@ -196,6 +198,12 @@ class LlmVulLoader(DatasetLoader):
                             else:
                                 vjbench_res = cve_test_java_file(project_path, test_cmd)
 
+                                if vjbench_res == 2:
+                                    answer.other_error = True
+                                    answer.error_message = "test_timeout"
+                                    answer.failed = 1
+                                    continue
+
                                 if test_cmd.startswith("./gradle"):
                                     result_data = read_test_results_gradle(
                                         vul_id, project_path
@@ -204,10 +212,6 @@ class LlmVulLoader(DatasetLoader):
                                     result_data = read_test_results_maven(
                                         vul_id, project_path
                                     )
-
-                            if res == 2 or vjbench_res == 2:
-                                answer.other_error = True
-                                answer.error_message = "test_timeout"
 
                             answer.passed = result_data["tests"]["overall_metrics"][
                                 "number_passing"
