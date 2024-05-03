@@ -187,7 +187,6 @@ class LlmVulLoader(DatasetLoader):
                                 if res == 2:
                                     answer.other_error = True
                                     answer.error_message = "test_timeout"
-                                    return
                                 testlog_file = os.path.join(
                                     VUL4J_DIR, vul_id, "VUL4J", "testing_results.json"
                                 )
