@@ -12,7 +12,7 @@ from utils.framework_utils import print_progress_bar, ROOT_PATH
 from model_loader.model_loader import ModelLoader
 
 
-with open(os.path.join(ROOT_PATH, "config", "config.json"), "r") as f:
+with open(os.path.join(ROOT_PATH, "config/config.json"), "r") as f:
     CODEQL_PATH = json.load(f)["paths"]["CODEQL_PATH"]
 
 

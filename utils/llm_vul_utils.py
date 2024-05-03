@@ -104,7 +104,7 @@ cve_int_to_name = {
     1003: "Netty-2",
 }
 
-with open(f"{ROOT_PATH}/config.json", "r") as file:
+with open(f"{ROOT_PATH}/config/config.json", "r") as file:
     JAVA8_DIR = json.load(file)["paths"]["JAVA8_PATH"]
 
 
