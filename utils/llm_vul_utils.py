@@ -138,6 +138,7 @@ def vul4j_test_java_file(working_directory, cmd):
             shell=True,
             capture_output=True,
             text=True,
+            cwd=working_directory,
             timeout=TIMEOUT_TEST,
         )
     except Exception:
@@ -161,34 +162,23 @@ def vul4j_test_java_file(working_directory, cmd):
 
 def cve_compile_java_file(working_directory, cmd):
 
-    cmd = cmd.split()
-    cmd = [
-        "export",
-        f"JAVA_HOME={JAVA8_DIR}",
-        "&&",
-        "export",
-        "PATH=$JAVA_HOME/bin:$PATH",
-        "&&",
-    ] + cmd
+    cmd = f"export JAVA_HOME={JAVA8_DIR} && export PATH=$JAVA_HOME/bin:$PATH && " + cmd
+
     try:
-        result = subprocess.run(
+        result = subprocess.call(
             cmd,
             shell=True,
-            capture_output=True,
-            text=True,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            cwd=working_directory,
             timeout=TIMEOUT_COMPILE,
         )
+
     except Exception:
         subprocess.run(["pkill", "-f", cmd])
-        return 2
+        return False
 
-    if "bc-java" in working_directory:
-        if "FAILED" in result:
-            return False
-        else:
-            return True
-
-    if result.returncode == 0:
+    if result == 0:
         return True
     else:
         return False
@@ -196,37 +186,26 @@ def cve_compile_java_file(working_directory, cmd):
 
 def cve_test_java_file(working_directory, cmd):
     time_start = time.time()
-    cmd = cmd.split()
-    cmd = [
-        "export",
-        f"JAVA_HOME={JAVA8_DIR}",
-        "&&",
-        "export",
-        "PATH=$JAVA_HOME/bin:$PATH",
-        "&&",
-    ] + cmd
+    cmd = f"export JAVA_HOME={JAVA8_DIR} && export PATH=$JAVA_HOME/bin:$PATH && " + cmd
 
     try:
-        result = subprocess.run(
+        result = subprocess.call(
             cmd,
             shell=True,
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_TEST,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            cwd=working_directory,
+            timeout=TIMEOUT_COMPILE,
         )
     except Exception:
         subprocess.run(["pkill", "-f", cmd])
         return 2
 
     time_elapse = time.time() - time_start
-    if result.returncode == -9 or time_elapse > TIMEOUT_TEST:
+    if result == -9 or time_elapse > TIMEOUT_TEST:
         return 2
-    if "bc-java" in working_directory:
-        if "FAILED" in result or "failed" in result:
-            return False
-        else:
-            return True
-    if result.returncode == 0:
+
+    if result == 0:
         return 1
     else:
         return 0
