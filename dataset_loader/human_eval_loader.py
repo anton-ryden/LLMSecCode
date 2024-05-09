@@ -64,7 +64,7 @@ class HumanEvalLoader(DatasetLoader):
         for i, (task_id, entry) in enumerate(instruct_problems[0].items()):
             if i == 1000:
                 break
-            prompts.add_instruct(task_id, entry["prompt"], "python")
+            prompts.add_instruct(task_id, entry["prompt"], "Python")
 
         # Fetch all problems from HumanEval infilling
         infilling_problems = [read_problems_infilling("single-line")]

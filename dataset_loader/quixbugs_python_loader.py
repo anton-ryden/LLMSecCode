@@ -47,7 +47,7 @@ class QuixBugsPythonLoader(DatasetLoader):
                     with open(file_path, "r") as file:
                         file_data = file.read().strip()
 
-                    prompts.add_instruct(file_name, file_data, "python")
+                    prompts.add_instruct(file_name, file_data, "Python")
 
                     lines = file_data.split("\n")
 

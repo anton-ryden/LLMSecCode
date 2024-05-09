@@ -49,8 +49,10 @@ class SecurityEvalLoader(DatasetLoader):
         dataset = load_dataset("s2e-lab/SecurityEval")
         data = dataset["train"]
 
-        for item in data:
-            prompts.add_instruct(item["ID"], item["Prompt"], "python")
+        for i, item in enumerate(data):
+            if i == 1000:
+                break
+            prompts.add_instruct(item["ID"], item["Prompt"], "Python")
 
         print(f"{self.name} prompts loaded.\n")
         self.prompts = prompts
