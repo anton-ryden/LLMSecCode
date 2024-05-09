@@ -23,7 +23,11 @@ class Configurator:
 
         self.available_loaders = self.get_available_loaders()
         # Parse command line arguments and check model configurations
+        self.max_new_tokens = testing_configs["generation_config"]["max_new_tokens"]
         self.parse_args()
+
+        self.generation_config.update({"max_new_tokens": self.max_new_tokens})
+
         self.check_model_configs()
 
     def parse_args(self):
@@ -53,18 +57,6 @@ class Configurator:
             type=int,
             default=self.max_new_tokens,
             help="The maximum new tokens of the response from the model.\n Default is %(default)s.",
-        )
-        parser.add_argument(
-            "--temperature",
-            type=float,
-            default=self.temperature,
-            help="The temperature used in generation, higher value -> more diverse answers.\n Default is %(default)s.",
-        )
-        parser.add_argument(
-            "--top_p",
-            type=float,
-            default=self.top_p,
-            help="Top p, also known as nucleus sampling, is another hyperparameter that controls the randomness of language model output. It sets a threshold probability and selects the top tokens whose cumulative probability exceeds the threshold.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--max_chain_depth",

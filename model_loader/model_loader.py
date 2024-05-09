@@ -35,10 +35,9 @@ class ModelLoader:
         self.template_name = template_name
         self.conversation_type = conversation_type
 
+        self.generation_config = conf.generation_config
         self.cache_dir = conf.model_dir
-        self.temperature = conf.temperature
         self.max_new_tokens = conf.max_new_tokens
-        self.top_p = conf.top_p
         self.answer_size = conf.answers_per_task
         self.device = conf.device
         self.batch_size = 1
@@ -207,13 +206,9 @@ class ModelLoader:
                     input,
                     use_cache=True,
                     generation_config=gen_cfg,
-                    max_new_tokens=self.max_new_tokens,
-                    temperature=self.temperature,
-                    top_p=self.top_p,
-                    do_sample=True,
-                    repetition_penalty=1.1,
                     eos_token_id=self.terminators,
                     pad_token_id=self.tokenizer.eos_token_id,
+                    **self.generation_config,
                 )
                 tot_time += time.time() - start
                 batch_completions.extend(generated_ids)

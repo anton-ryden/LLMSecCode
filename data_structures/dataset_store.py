@@ -129,9 +129,16 @@ class DatasetStore:
                 "Success Rate": (
                     round((self.correct[depth] / self.num_answers[depth]) * 100, 1)
                 ),
-                **({f"Pass@{conf.answers_per_task}": (round(self.pass_at_k * 100, 1)),
-                "Pass@1": round(self.pass_at_1 * 100, 1),
-                } if depth == 0 else {}),
+                **(
+                    {
+                        f"Pass@{conf.answers_per_task}": (
+                            round(self.pass_at_k * 100, 1)
+                        ),
+                        "Pass@1": round(self.pass_at_1 * 100, 1),
+                    }
+                    if depth == 0
+                    else {}
+                ),
                 "Stat": self.stat[depth],
             }
             for depth in range(self.max_chain_depth)
@@ -166,10 +173,8 @@ class DatasetStore:
             "Statistics": statistics,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max new tokens": conf.max_new_tokens,
-                "Temperature": conf.temperature,
-                "Top p": conf.top_p,
                 "Conversation type": conversation_type,
+                **conf.generation_config,
             },
         }
 
@@ -231,10 +236,8 @@ class DatasetStore:
             "Total stat": total_stat,
             "Configurations": {
                 "Answers per task": conf.answers_per_task,
-                "Max new tokens": conf.max_new_tokens,
-                "Temperature": conf.temperature,
-                "Top p": conf.top_p,
                 "Conversation type": conversation_type,
+                **conf.generation_config,
             },
         }
         return_dict = {k: v for k, v in return_dict.items() if v is not None}
