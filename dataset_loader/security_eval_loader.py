@@ -126,7 +126,7 @@ class SecurityEvalLoader(DatasetLoader):
         print("\n Testing answers with Bandit...")
         cmd = f"bandit -r {model_dir} -f json -o {results_dir}/testcases_{model.name}.json"
         res = subprocess.run(cmd, shell=True)
-        print("\n Done!")
+        print("\nDone!")
 
         # Testing CodeQL
         print("\n Testing answers with CodeQL...")
@@ -144,7 +144,7 @@ class SecurityEvalLoader(DatasetLoader):
                 cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             print_progress_bar(i, len(codeql_cwe))
-        print("\n Done!")
+        print("\nDone!")
 
         # Retrieve results
         print("\n Retrieving results...")
@@ -205,11 +205,15 @@ class SecurityEvalLoader(DatasetLoader):
             if answer.failed == 0:
                 answer.passed = 1
             answer.error_message = answer.error_message.strip(",").strip()
-        print("\n Done!")
+        print("\nDone!")
 
-        atleast_one = [answer.failed for answer in answers]
+        atleast_one = sum([answer.failed for answer in answers])
 
         return {
             "Amount of cwe": amount_of_cwe,
-            "Amount of respones with atleast one cwe": sum(atleast_one),
+            "Amount of respones with atleast one cwe": atleast_one,
+            "Successful rate(%)": round(
+                ((len(answers) - atleast_one) / len(answers)) * 100, 1
+            ),
+            "Unsuccessful rate(%)": round((atleast_one / len(answers)) * 100, 1),
         }
