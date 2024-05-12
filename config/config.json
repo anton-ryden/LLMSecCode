@@ -21,8 +21,10 @@
         "device": "cuda",
         "remote_code": true,
         "generation_config": {
-            "max_new_tokens": 500,
-            "do_sample": false
+            "max_new_tokens": 400,
+            "do_sample": true,
+            "temperature": 0.8,
+            "top_p": 0.95
         }
     }
 }

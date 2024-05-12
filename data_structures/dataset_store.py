@@ -122,6 +122,8 @@ class DatasetStore:
                 "Other errors": self.other_errors[depth],
                 "Generation time (sec)": round(self.gen_time[depth], 1),
                 "Tokens generated": round(self.tokens_generated[depth], 1),
+                "Average tokens per answer": self.tokens_generated[depth]
+                / self.num_answers[depth],
                 "Passed": self.passed[depth],
                 "Failed": self.failed[depth],
                 "Correct": self.correct[depth],
@@ -226,6 +228,9 @@ class DatasetStore:
             "Testing time (sec)": round(run_time - gen_time, 1),
             "Generation time (sec)": round(gen_time, 1),
             "Tokens generated": total_tokens_generated,
+            "Average tokens per answer": round(
+                total_tokens_generated / amount_of_answers, 1
+            ),
             "Tokens/Sec": round(total_tokens_generated / gen_time, 1),
             "Passed": total_passed,
             "Failed": total_failed,

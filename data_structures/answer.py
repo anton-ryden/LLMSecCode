@@ -108,6 +108,7 @@ class Answer:
         """
         if self.conversation_type == "instruction":
             self.code = self.extract_conversation()
+            self.code = self.code.strip()
         elif self.conversation_type == "completion":
             self.code = self.extract_completion()
         elif self.conversation_type == "infilling":
@@ -143,10 +144,7 @@ class Answer:
                 )
             res_string += fixed_code_block.strip()
         else:
-            self.llm_resp_clean = re.sub(
-                r"```", "", self.llm_resp_clean, flags=re.MULTILINE
-            )
-            res_string = self.llm_resp_clean
+            res_string = re.sub(r"```", "", self.llm_resp_clean, flags=re.MULTILINE)
 
         return res_string
 
