@@ -1,7 +1,7 @@
 {
     "prompt_template": "<PRE> {prefix} <SUF>{suffix} <MID>",
     "answer_template": "{prefix}{answer}{suffix}",
-    "tokens_to_remove": ["<EOT>", "▁<EOT>", "[/INST]","[PYTHON]", "[/PYTHON]", "[CODE]", "[/CODE]"],
+    "tokens_to_remove": ["<EOT>", "▁<EOT>", "[/INST]","[PYTHON]", "[/PYTHON]", "[CODE]", "[/CODE]", "[TESTS]", "[/TESTS]"],
     "terminators": [],
     "use_system_message": true
 }
