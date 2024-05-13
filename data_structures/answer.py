@@ -129,24 +129,11 @@ class Answer:
         Returns:
             str: Extracted code.
         """
-        # Define the regex pattern
-        code_pattern = re.compile(r"\n?```([a-zA-Z]+)?\n?\n(.*?)```", re.DOTALL)
-
-        # Find all matches in the string
-        res_string = ""
-        match = re.search(code_pattern, self.llm_resp_clean)
-        if match:
-            language, code_block = match.groups()
-            fixed_code_block = code_block.lstrip()
-            if language:
-                fixed_code_block = re.sub(
-                    rf"^{language}", "", fixed_code_block, flags=re.MULTILINE
-                )
-            res_string += fixed_code_block.strip()
-        else:
-            res_string = re.sub(r"```", "", self.llm_resp_clean, flags=re.MULTILINE)
-
-        return res_string
+        # Using regular expression to find content between code blocks
+        extracted = re.findall(r"```(.*?)```", self.llm_resp_clean, re.DOTALL)
+        if len(extracted) == 0:
+            return self.llm_resp_clean
+        return extracted[0]
 
     def extract_completion(self):
         """

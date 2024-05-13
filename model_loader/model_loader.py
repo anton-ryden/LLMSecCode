@@ -147,6 +147,24 @@ class ModelLoader:
         updated_responses = answer.replace(inst, "")
         return updated_responses
 
+    def replace_tokens(self, no_inst: str) -> str:
+        """
+        Replaces token if specified in the json file for the model.
+
+        Args:
+            no_inst (str): The string from which to replace tokens.
+        Returns:
+            str: The new string.
+        """
+        with open(f"./chat_templates/{self.template_name}.json") as file:
+            tokens = json.load(file)
+
+        if "replace_tokens" in tokens:
+            for replace_this, replace_with in tokens["replace_tokens"].items():
+                no_inst = no_inst.replace(replace_this, replace_with)
+
+        return no_inst
+
     def clean_response(self, prompt: List[dict], llm_resp: str) -> str:
         """
         Clean the model response.
@@ -159,6 +177,7 @@ class ModelLoader:
         """
         no_inst = self.remove_inst(prompt, llm_resp)
         no_inst = self.remove_special_tokens(no_inst)
+        no_inst = self.replace_tokens(no_inst)
         no_inst = no_inst.replace("\t", "    ")
         no_inst = no_inst.replace("\\n", "\n")
         no_inst = no_inst.rstrip(" ")
