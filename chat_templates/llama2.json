@@ -6,6 +6,6 @@
         "[PYTHON]": "```",
         "[/PYTHON]": "```"
     },
-    "terminators": [],
+    "terminators": ["<|EOT|>"],
     "use_system_message": true
 }
