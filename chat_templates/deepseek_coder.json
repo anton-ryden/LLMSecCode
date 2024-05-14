@@ -3,6 +3,6 @@
   "answer_template": "{prefix}\n{answer}\n{suffix}",
   "tokens_to_remove": [],
   "terminators": [],
-  "use_system_message": true
+  "use_system_message": false
 }
   

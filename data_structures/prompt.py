@@ -1,4 +1,4 @@
-import json
+import re
 
 
 class Prompt:
@@ -52,7 +52,10 @@ class Prompt:
             system_role = {"role": "system", "content": system_file.read()}
         with open("./prompts/instruction_code_gen") as instruction_file:
             content = instruction_file.read()
-        content = content.replace("{language}", language)
+
+        # Replace the first occurrence
+        content = re.sub(r"\{language\}", language, content, count=1)
+        content = content.replace("{language}", language.lower())
         content = content.replace("{code}", problem)
         user_role = {"role": "user", "content": content}
         return cls([system_role, user_role])

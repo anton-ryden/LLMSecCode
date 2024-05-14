@@ -108,7 +108,6 @@ class Answer:
         """
         if self.conversation_type == "instruction":
             self.code = self.extract_conversation()
-            self.code = self.code.strip()
         elif self.conversation_type == "completion":
             self.code = self.extract_completion()
         elif self.conversation_type == "infilling":
@@ -130,9 +129,16 @@ class Answer:
             str: Extracted code.
         """
         # Using regular expression to find content between code blocks
+        extracted = re.findall(
+            r"\n?```([a-zA-Z]+)?\n(.*?)```", self.llm_resp_clean, re.DOTALL
+        )
+        if len(extracted) != 0:
+            _, code = extracted[0]
+            return code.lstrip()
+
         extracted = re.findall(r"```(.*?)```", self.llm_resp_clean, re.DOTALL)
         if len(extracted) == 0:
-            return self.llm_resp_clean
+            return self.llm_resp_clean.replace("```", "")
         return extracted[0]
 
     def extract_completion(self):
