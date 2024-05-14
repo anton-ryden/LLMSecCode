@@ -20,13 +20,14 @@ class Configurator:
 
         for key, value in testing_configs.items():
             setattr(self, key, value)
+            if isinstance(value, dict):
+                for dict_key, dict_value in value.items():
+                    setattr(self, dict_key, dict_value)
 
         self.available_loaders = self.get_available_loaders()
-        # Parse command line arguments and check model configurations
-        self.max_new_tokens = testing_configs["generation_config"]["max_new_tokens"]
-        self.parse_args()
 
-        self.generation_config.update({"max_new_tokens": self.max_new_tokens})
+        # Parse command line arguments and check model configurations
+        self.parse_args()
 
         self.check_model_configs()
 
@@ -51,12 +52,6 @@ class Configurator:
             type=int,
             default=self.answers_per_task,
             help="The number of answers to generate per task.\n Default is %(default)s.",
-        )
-        parser.add_argument(
-            "--max_new_tokens",
-            type=int,
-            default=self.max_new_tokens,
-            help="The maximum new tokens of the response from the model.\n Default is %(default)s.",
         )
         parser.add_argument(
             "--max_chain_depth",
@@ -94,6 +89,11 @@ class Configurator:
             type=bool,
             default=self.remote_code,
             help="If you want to run remote code or not. Running remote code is a security risk so make sure you are in a sandbox/safe enviroment.",
+        )
+        parser.add_argument(
+            "--params",
+            nargs="*",
+            help="This will change the huggingface generation List of parameters in the form key=value",
         )
 
         args = parser.parse_args()
