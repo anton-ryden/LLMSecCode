@@ -77,8 +77,15 @@ class SecurityEvalLoader(DatasetLoader):
         )
         results_dir = os.path.join(seceval_dir, "results")
 
+        codeql_ver_path = os.path.join(
+            CODEQL_PATH, "qlpacks", "codeql", "python-queries"
+        )
+        codeql_ver = os.listdir(codeql_ver_path)
+
         codeql_cwe_directory = os.path.join(
-            CODEQL_PATH, "qlpacks", "codeql", "python-queries", "0.9.11", "Security"
+            codeql_ver_path,
+            codeql_ver[0],
+            "Security",
         )
         codeql_cwe = os.listdir(codeql_cwe_directory)
 
@@ -89,6 +96,13 @@ class SecurityEvalLoader(DatasetLoader):
 
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
+
+        # Clean all previous answers
+        for i, answer in enumerate(answers):
+            cwe_id = answer.id.split("_")[0]
+            cwe_path = os.path.join(model_dir, cwe_id)
+            if os.path.exists(cwe_path):
+                shutil.rmtree(cwe_path)
 
         # Write all answers to a file
         for i, answer in enumerate(answers):
