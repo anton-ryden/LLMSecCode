@@ -102,6 +102,35 @@ class Configurator:
         for attr, value in vars(args).items():
             setattr(self, attr, value)
 
+        if args.params:
+            for param in args.params:
+                key, value = param.split("=")
+                typed_value = self.infer_type(value)
+                self.generation_config.update({key: typed_value})
+
+    def infer_type(self, value):
+        """
+        Infer the type of the given value.
+        Try converting to int, float, and bool, in that order.
+        Default to str if none of the conversions are successful.
+        """
+        if value.lower() in {"true", "false"}:
+            return value.lower() == "true"
+
+        try:
+            int_value = int(value)
+            return int_value
+        except ValueError:
+            pass
+
+        try:
+            float_value = float(value)
+            return float_value
+        except ValueError:
+            pass
+
+        return value
+
     def check_model_configs(self):
         """Check if specified template sets exist."""
         for model_config in self.model_configs:

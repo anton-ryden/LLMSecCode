@@ -130,7 +130,7 @@ class Answer:
         """
         # Using regular expression to find content between code blocks
         extracted = re.findall(
-            r"\n?```([a-zA-Z]+)?\n(.*?)```", self.llm_resp_clean, re.DOTALL
+            r"\n?```([a-zA-Z]+)\n(.*?)```", self.llm_resp_clean, re.DOTALL
         )
         if len(extracted) != 0:
             _, code = extracted[0]
