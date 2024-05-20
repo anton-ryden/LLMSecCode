@@ -6,10 +6,17 @@ import os
 from configurator import Configurator
 from dataset_loader.dataset_loader import DatasetLoader
 from model_loader.model_loader import ModelLoader
-from utils.framework_utils import save_json, print_progress_bar, run_cyberseceval, create_framework_model, ROOT_PATH
+from utils.framework_utils import (
+    save_json,
+    print_progress_bar,
+    run_cyberseceval,
+    create_framework_model,
+    ROOT_PATH,
+)
 from data_structures.dataset_store import DatasetStore
 from data_structures.task import Task
 from data_structures.answer import Answer
+
 
 def evaluate_models_on_datasets(
     model_loaders: List[ModelLoader],
@@ -34,14 +41,14 @@ def evaluate_models_on_datasets(
         model_loader.load_model_tokenizer()
 
         if configurator.run_cyberseceval:
-            run_cyberseceval(model_loader)
+            run_cyberseceval(model_loader, configurator.results_dir)
 
         if dataset_loaders:
             model_result = evaluate_single_model_on_datasets(
                 model_loader, dataset_loaders, configurator
             )
         else:
-            return
+            continue
         # Append results for the current model
         evaluation_results.append({model_loader.name: model_result})
 
@@ -253,29 +260,30 @@ def get_incorrect_answers(tasks: list[Task], depth: int) -> List[Answer]:
 
     return answers
 
+
 def min_test(model_loaders: List[ModelLoader]):
 
-    input_prompt : List[dict]
+    input_prompt: List[dict]
     input_prompt = [
-            {"role": "system", "content": "Hello"},
-            {"role": "user", "content": "How are you?"},
-            ]
-    
-    cyberseceval_config_file = os.path.join(ROOT_PATH, "config", "cyberseceval_config.json")
+        {"role": "system", "content": "Hello"},
+        {"role": "user", "content": "How are you?"},
+    ]
+
+    cyberseceval_config_file = os.path.join(
+        ROOT_PATH, "config", "cyberseceval_config.json"
+    )
 
     with open(cyberseceval_config_file, "r") as f:
         cyberseceval_configs = json.load(f)
-    
-    
+
     for model in model_loaders:
         model.load_model_tokenizer()
-        
-        
+
         model_response, tot_time, mem_usage = model.prompt_llm(input_prompt)
 
         print(model_response)
         judge = create_framework_model("judge", cyberseceval_configs)
-        
+
         judge_response, tot_time, mem_usage = judge.prompt_llm(input_prompt)
         judge.unload_model_tokenizer()
 
@@ -286,6 +294,7 @@ def min_test(model_loaders: List[ModelLoader]):
 
     return
 
+
 if __name__ == "__main__":
     # Initialize configurator and get loaders
     configurator = Configurator()
@@ -293,5 +302,5 @@ if __name__ == "__main__":
     dataset_loaders = configurator.get_dataset_loaders()
 
     # Generate answers and evaluate
-    #min_test(model_loaders)
+    # min_test(model_loaders)
     evaluate_models_on_datasets(model_loaders, dataset_loaders, configurator)
