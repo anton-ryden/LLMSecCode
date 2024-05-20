@@ -31,6 +31,9 @@ class Prompt:
             system_role = {"role": "system", "content": system_file.read()}
         with open("./prompts/instruction_APR") as instruction_file:
             content = instruction_file.read()
+        # Replace the first occurrence with capital letter, the rest lower
+        content = re.sub(r"\{language\}", language, content, count=1)
+        content = content.replace("{language}", language.lower())
         content = content.replace("{language}", language)
         content = content.replace("{code}", code)
         user_role = {"role": "user", "content": content}
@@ -53,7 +56,7 @@ class Prompt:
         with open("./prompts/instruction_code_gen") as instruction_file:
             content = instruction_file.read()
 
-        # Replace the first occurrence
+        # Replace the first occurrence with capital letter, the rest lower
         content = re.sub(r"\{language\}", language, content, count=1)
         content = content.replace("{language}", language.lower())
         content = content.replace("{code}", problem)
