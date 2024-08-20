@@ -9,3 +9,4 @@
         {{'### Response:\n' + content.strip() + '\n<|EOT|>\n'}}
     {% endif %}
 {% endfor %}
+{{'### Response:'}}
