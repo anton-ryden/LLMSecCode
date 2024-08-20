@@ -124,8 +124,8 @@ def run_cyberseceval(model_loader: ModelLoader, results_dir: str):
     results_path = os.path.join(
         ROOT_PATH,
         "results",
-        model_name,
         results_dir,
+        model_loader.name,
         cyberseceval_configs["testing_configs"]["results_dir"],
     )
 
