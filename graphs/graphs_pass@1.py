@@ -404,8 +404,12 @@ def combine_dataset_succrate(result_directory, datasets: list, sorted_model_name
 if __name__ == "__main__":
 
     # Get the absolute path of the current file
-    current_file_path = os.path.dirname(os.path.abspath(__file__))
-    default_result_path = os.path.join(current_file_path, "results/code_eval/")
+    current_file_path = os.path.abspath(__file__)
+    # Get the parent directory (one step above the current file)
+    parent_directory = os.path.dirname(current_file_path)
+    # Get the grandparent directory (two step above the current file)
+    grandparent_directory = os.path.dirname(parent_directory)
+    default_result_path = os.path.join(grandparent_directory, "results/code_eval/")
     merged_dir = os.path.join(default_result_path, "merged")
 
     if os.path.exists(merged_dir):
@@ -416,13 +420,12 @@ if __name__ == "__main__":
         if os.path.isdir(model_path) and model_path != merged_dir:
 
             merge_json_files(
-                model_path,
-                default_result_path + "/merged/" + model_name + "_merged.json",
+                model_path, os.path.join(merged_dir, model_name + "_merged.json")
             )
 
     # Create directory for saving plotting results
     graph_directory = os.path.join(current_file_path, "graphs")
-    os.makedirs(graph_directory, exist_ok=True)
+    os.makedirs(parent_directory, exist_ok=True)
 
     # Define dataset (QuixBugs Python, QuixBugs Java, HumanEval)
     datasets = ["HumanEval", "QuixBugs Python", "QuixBugs Java"]
@@ -430,7 +433,3 @@ if __name__ == "__main__":
     sorted_models = combine_dataset_pass1(merged_dir, datasets)
     datasets = ["CyberSecEval2", "SecurityEval", "llm-vul"]
     combine_dataset_succrate(merged_dir, datasets, sorted_models)
-    # Plot graphs
-    # for dataset in datasets:
-    #    plot_pass_at_k(merged_dir, dataset)
-    #    plot_errors(merged_dir, dataset)
