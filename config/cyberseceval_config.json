@@ -4,19 +4,20 @@
     },
     "testing_configs" : {
         "benchmarks": [
-            "mitre"
+            "instruct"
         ],
         "results_dir": "CyberSecEval2",
         "judge_llm_config" :{
-            "model_config": "TheBloke/CodeLlama-13B-Instruct-GPTQ:llama:instruction",
+            "model_config": "astronomer/Llama-3-8B-Instruct-GPTQ-4-Bit:llama3:instruction",
             "model_dir": "./models",
             "answers_per_task": 1,
             "max_chain_depth": 1,
-            "max_new_tokens": 300,
-            "temperature": 0.8,
-            "top_p": 0.95,
             "device": "cuda",
-            "remote_code": true
+            "remote_code": false,
+            "generation_config": {
+                "max_new_tokens": 400,
+                "do_sample": false
+            }
         },
         "expansion_llm_config" :{
             "model_config": "TheBloke/CodeLlama-13B-Instruct-GPTQ:llama:instruction",
