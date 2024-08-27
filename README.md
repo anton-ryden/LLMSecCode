@@ -1,6 +1,6 @@
-# Project Name
+# LLMSecCode
 
-Brief description of your project.
+A framework that allows you to evaluate models capabilities and different secure coding 
 
 ## Introduction
 
@@ -14,7 +14,7 @@ To set up the project and its dependencies, follow the steps below:
 Clone the project repository to your local machine using the following command:
 
 ```bash
-git clone https://github.com/anton-ryden/APR_framework.git
+git clone https://github.com/anton-ryden/LLMSecCode.git
 ```
 ## Step 2: Navigate to the Project Directory
 Navigate to the root directory of the cloned repository.
@@ -32,16 +32,18 @@ pip install -r requirements.txt
 
 ## Step 4: Download datasets
 
-Run the setup script to clone repositories for the datasets and make the appropiate changes. 
+Run the setup script to clone repositories for the datasets and make the appropiate changes.
 
 ```bash
 python setup.py
 ```
 
-## Note on PyTorch and AutoGPTQ
+## Note on quantization (PyTorch and AutoGPTQ)
 
-This project uses AutoGPTQ, which depends on PyTorch. Depending on your system and whether you plan to use GPU acceleration, you may need to check and adjust the PyTorch version manually. Refer to the PyTorch documentation for information on installing PyTorch with the appropriate CUDA or ROCm version.
-Step 4: Run the Project
+If you would like to use GPTQ quantized models such as those we provide previous results for you need to use AutoGPTQ, which depends on PyTorch. Depending on your system and whether you plan to use GPU acceleration, you may need to check and adjust the PyTorch version manually. Refer to the PyTorch documentation for information on installing PyTorch with the appropriate CUDA or ROCm version.
+
+
+## Step 5: Run the Project
 
 After successfully completing the setup, you can run the project. Ensure that the virtual environment, if created, is activated. If not, activate it using:
 
@@ -69,65 +71,34 @@ If you are unsure of what to provide the model with and how it affects the progr
 python main.py -h
 ```
 
-## Examples of supported models:
+## Models in results:
 | Supported coversation type                | Model name                                    | Prompt template |
-| ------------------------------------------| ----------------------------------------------| ----------------|
-| Code Completion/Code Insertion            | TheBloke/CodeLlama-7B-GPTQ                    | llama2           |
-| Code Completion/Code Insertion            | TheBloke/CodeLlama-13B-GPTQ                   | llama2           |
-| Code Completion/Code Insertion            | TheBloke/CodeLlama-34B-GPTQ                   | llama2           |
-| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama2           |
-| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama2           |
-| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama2           |
-| Code Insertion                            | TheBloke/CodeLlama-7B-Python-GPTQ             | llama2           |
-| Code Insertion                            | TheBloke/CodeLlama-13B-Python-GPTQ            | llama2           |
-| Code Insertion                            | TheBloke/CodeLlama-34B-Python-GPTQ            | llama2           |
-| Instruction                               | TheBloke/Llama-2-7B-GPTQ                      | llama2           |
-| Instruction                               | TheBloke/Llama-2-13B-GPTQ                     | llama2           |
-| Instruction                               | TheBloke/Llama-2-70B-GPTQ                     | llama2           |
-| Instruction                               | TheBloke/Llama-2-7B-Chat-GPTQ                 | llama2           |
-| Instruction                               | TheBloke/Llama-2-13B-chat-GPTQ                | llama2           |
-| Instruction                               | TheBloke/Llama-2-70B-chat-GPTQ                | llama2           |
+| ------------------------------------------| ----------------------------------------------|-----------------|
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama2          |
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama2          |
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama2          |
+| Instruction                               | TheBloke/Llama-2-7B-Chat-GPTQ                 | llama2          |
+| Instruction                               | TheBloke/Llama-2-13B-Chat-GPTQ                | llama2          |
 | Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder  |
 | Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder  |
 | Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-base-GPTQ        | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-6.7B-base-GPTQ        | deepseek_coder  |
-| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-33B-base-GPTQ         | deepseek_coder  |
-| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-base-GPTQ***      |***deepseek_llm***|
-| ***Instruction***                         | ***TheBloke/deepseek-llm-67B-base-GPTQ***     | ***deepseek_llm***|
-| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-chat-GPTQ***      |***deepseek_llm***|
-| ***Instruction***                         | ***TheBloke/deepseek-llm-67B-chat-GPTQ***     | ***deepseek_llm***|
+| Instruction                               | astronomer/Llama-3-8B-Instruct-GPTQ-4-Bit     | llama3          |
 
-### Examples of models fine tuned for instruction
-| Model name                                    | Prompt template   |
-| --------------------------------------------- | ------------------|
-| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama             |
-| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama             |
-| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama             |
-| TheBloke/Llama-2-7B-Chat-GPTQ                 | llama             |
-| TheBloke/Llama-2-13B-chat-GPTQ                | llama             |
-| TheBloke/Llama-2-70B-chat-GPTQ                | llama             |
-| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder    |
-| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder    |
-| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder    |
-| ***TheBloke/deepseek-llm-7B-chat-GPTQ***      | ***deepseek_llm***|
-| ***TheBloke/deepseek-llm-67B-chat-GPTQ***     | ***deepseek_llm***|
+## A few supported models (easy to include your own):
+| Supported coversation type                | Model family                               | Prompt template  |
+| ------------------------------------------| -------------------------------------------|------------------|
+| Code Completion/Code Insertion            | TheBloke/CodeLlama                         | llama2           |
+| Instruction/Code Completion/Code Insertion| TheBloke/CodeLlama-Instruct                | llama2           |
+| Code Insertion                            | TheBloke/CodeLlama-Python                  | llama2           |
+| Instruction                               | TheBloke/Llama-2-7B-GPTQ                   | llama2           |
+| Instruction                               | TheBloke/Llama-2-7B-Chat-GPTQ              | llama2           |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-instruct-GPTQ | deepseek_coder   |
+| Instruction/Code Completion/Code Insertion| TheBloke/deepseek-coder-1.3B-base-GPTQ     | deepseek_coder   |
+| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-base-GPTQ***   |***deepseek_llm***|
+| ***Instruction***                         | ***TheBloke/deepseek-llm-7B-chat-GPTQ***   |***deepseek_llm***|
 
-### Examples of models that support code infilling
-| Model name                                    | Prompt template   |
-| --------------------------------------------- | ------------------|
-| TheBloke/CodeLlama-7B-GPTQ                    | llama             |
-| TheBloke/CodeLlama-13B-GPTQ                   | llama             |
-| TheBloke/CodeLlama-34B-GPTQ                   | llama             |
-| TheBloke/CodeLlama-7B-Instruct-GPTQ           | llama             |
-| TheBloke/CodeLlama-13B-Instruct-GPTQ          | llama             |
-| TheBloke/CodeLlama-34B-Instruct-GPTQ          | llama             |
-| TheBloke/deepseek-coder-1.3B-base-GPTQ        | deepseek_coder    |
-| TheBloke/deepseek-coder-6.7B-base-GPTQ        | deepseek_coder    |
-| TheBloke/deepseek-coder-33B-base-GPTQ         | deepseek_coder    |
-| TheBloke/deepseek-coder-1.3B-instruct-GPTQ    | deepseek_coder    |
-| TheBloke/deepseek-coder-6.7B-instruct-GPTQ    | deepseek_coder    |
-| TheBloke/deepseek-coder-33B-instruct-GPTQ     | deepseek_coder    |
+## How to run a model not in the supported matrix
+
 
 ***NOTE: Models in bold do not support system prompts***
 ## Code completion
@@ -190,5 +161,3 @@ def quicksort(arr):
     greater = quicksort([x for x in arr[1:] if x > pivot])
     return lesser + [pivot] + greater
 ```
-
-## How to run a model not in the supported matrix
